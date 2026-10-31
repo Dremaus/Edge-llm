@@ -142,6 +142,26 @@ def test_streaming_passthrough():
     assert b"[DONE]" in body
 
 
+def test_pairing_flow_and_lockout():
+    from app.security.pairing import PairingManager
+
+    llm = FakeLLM()
+    store = TokenStore()
+    pairing = PairingManager(store)
+    client = TestClient(create_app(Settings(main_model="main"), llm, store, pairing))
+    code, _ = pairing.new_code()
+    r = client.post("/v1/pair", json={"code": code, "device_name": "Pixel"})
+    assert r.status_code == 200
+    token = r.json()["token"]
+    ok = client.get("/v1/models", headers={"Authorization": f"Bearer {token}"})
+    assert ok.status_code == 200
+    # Ten sam kod drugi raz nie działa, a seria błędów blokuje adres.
+    assert client.post("/v1/pair", json={"code": code}).status_code == 401
+    for _ in range(4):
+        client.post("/v1/pair", json={"code": "AAAA-AAAA-AA"})
+    assert client.post("/v1/pair", json={"code": "AAAA-AAAA-AA"}).status_code == 429
+
+
 def test_models_lists_only_allowed():
     client, _, headers, _ = make_client()
     ids = [m["id"] for m in client.get("/v1/models", headers=headers).json()["data"]]

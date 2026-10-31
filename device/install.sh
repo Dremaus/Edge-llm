@@ -32,7 +32,7 @@ echo "==> Pamięć RAM: $(free -g | awk '/Mem:/ {print $2}') GB"
 echo "==> Aktualizacje bezpieczeństwa"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
-apt-get install -y -q ufw unattended-upgrades fail2ban python3-venv openssl curl
+apt-get install -y -q ufw unattended-upgrades fail2ban python3-venv openssl curl qrencode
 dpkg-reconfigure -f noninteractive unattended-upgrades
 
 echo "==> Zapora: domyślnie wszystko zablokowane, ruch tylko przez Tailscale"
@@ -117,12 +117,7 @@ install -m 644 "$REPO_DIR/device/systemd/edge-llm.service" /etc/systemd/system/e
 systemctl daemon-reload
 systemctl enable --now edge-llm
 
-echo "==> Token dla pierwszego telefonu"
 install -d -m 700 -o "$SERVICE_USER" -g "$SERVICE_USER" "$STATE_DIR"
-if [[ ! -s "$STATE_DIR/tokens.json" ]]; then
-  (cd "$INSTALL_DIR/server" && sudo -u "$SERVICE_USER" EDGE_TOKENS_FILE="$STATE_DIR/tokens.json" \
-    "$INSTALL_DIR/venv/bin/python" -m app.security.tokens add "Pierwszy telefon")
-fi
 
 if [[ $HARDEN_SSH -eq 1 ]]; then
   echo "==> Utwardzanie SSH"
@@ -155,9 +150,11 @@ Kolejne kroki (wymagają interakcji):
   2. sudo tailscale serve --bg --https=443 http://127.0.0.1:8080
                                   # HTTPS z certyfikatem, dostępne tylko w Twojej sieci Tailscale
   3. W panelu Tailscale włącz Tailnet Lock i ustaw ACL: dostęp do urządzenia tylko z Twoich telefonów.
-  4. Zapisz token wyświetlony powyżej w aplikacji — nie da się go odczytać ponownie.
+  4. Sparuj telefon (kod QR ważny 10 minut, jednorazowy):
+       cd /opt/edge-llm/server && sudo -u edge EDGE_PUBLIC_URL=https://<nazwa>.<tailnet>.ts.net \
+         /opt/edge-llm/venv/bin/python -m app.security.pairing new
 
-Zarządzanie tokenami:
+Zarządzanie tokenami telefonów:
   cd /opt/edge-llm/server && sudo -u edge EDGE_TOKENS_FILE=/var/lib/edge-llm/tokens.json \
     /opt/edge-llm/venv/bin/python -m app.security.tokens list|add <nazwa>|revoke <id>
 EOF

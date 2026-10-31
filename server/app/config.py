@@ -16,6 +16,10 @@ class Settings:
     tokens_file: str = field(
         default_factory=lambda: _env("EDGE_TOKENS_FILE", "/var/lib/edge-llm/tokens.json")
     )
+    # Jednorazowe kody parowania (patrz app/security/pairing.py).
+    pairing_file: str = field(
+        default_factory=lambda: _env("EDGE_PAIRING_FILE", "/var/lib/edge-llm/pairing.json")
+    )
     # Adres API Ollamy zgodnego z OpenAI — tylko localhost.
     ollama_url: str = field(default_factory=lambda: _env("EDGE_OLLAMA_URL", "http://127.0.0.1:11434/v1"))
     # Język wybrany przy pierwszym uruchomieniu: "pl" lub "en".
