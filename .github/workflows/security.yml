@@ -19,9 +19,16 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: gitleaks (cała historia)
+        run: |
+          set +e
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+            git /repo --redact --report-format json --report-path /repo/gitleaks.json --exit-code 1
+          status=$?
+          if [ $status -ne 0 ] && [ -f gitleaks.json ]; then
+            jq -r '.[] | "::error file=\(.File),line=\(.StartLine),title=gitleaks::reguła \(.RuleID) w commicie \(.Commit[0:8])"' gitleaks.json | head -n 40
+          fi
+          exit $status
 
   codeql:
     name: CodeQL
