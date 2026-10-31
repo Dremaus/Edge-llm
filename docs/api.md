@@ -9,6 +9,8 @@ Wszystkie endpointy poza `/health` i `/v1/pair` wymagają nagłówka `Authorizat
 | POST | `/v1/pair` | Wymiana jednorazowego kodu z QR na token telefonu |
 | GET | `/v1/models` | Dozwolone modele (`auto` + katalog) |
 | POST | `/v1/chat/completions` | Czat w formacie OpenAI, z routerem i strumieniowaniem |
+| POST | `/v1/agent` | Zadanie z narzędziami (kalkulator, czas, notatki); akcje zmieniające dane wymagają zgody |
+| POST | `/v1/agent/actions/{id}` | Zgoda lub odmowa dla akcji agenta: `{"approve": true}` |
 | GET / PATCH | `/v1/settings` | Język, model rozmów, stan kreatora |
 | GET | `/v1/devices` | Sparowane telefony (bez tokenów); `current` = ten telefon |
 | DELETE | `/v1/devices/me` | Wylogowanie: telefon unieważnia własny token |
@@ -66,3 +68,26 @@ PATCH /v1/settings
 | 404 | Rozmowa nie istnieje lub należy do innego telefonu | Odświeża listę |
 | 411 / 413 | Brak `Content-Length` / zapytanie > 25 MB | Zmniejsza zdjęcie |
 | 429 | Limit zapytań lub blokada po nieudanych próbach | Ponawia później |
+
+## Agent z narzędziami
+
+```http
+POST /v1/agent
+{"messages": [{"role": "user", "content": "Zanotuj: kupić mleko"}]}
+
+200 {"status": "needs_confirmation", "action": {"id": "…", "tool": "save_note", "arguments": {"text": "kupić mleko"}}, "steps": [...]}
+```
+
+Aplikacja pokazuje użytkownikowi, co agent chce zrobić, i wysyła decyzję:
+
+```http
+POST /v1/agent/actions/{id}
+{"approve": true}
+
+200 {"status": "done", "content": "Zapisałem notatkę.", "steps": [...]}
+```
+
+- Narzędzia tylko do odczytu (kalkulator, czas, lista notatek) działają bez pytania.
+- Zapis i akcje nieodwracalne zawsze czekają na zgodę; zgoda jest jednorazowa, ważna 10 minut i tylko dla telefonu, który zlecił zadanie.
+- Wyniki narzędzi trafiają do modelu jako treść niezaufana (ochrona przed prompt injection); wiadomość `system` od klienta jest ignorowana.
+- Dostęp do internetu i uruchamianie kodu są wyłączone.

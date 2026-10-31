@@ -31,6 +31,18 @@ class OllamaClient:
             data = resp.json()
         return data["choices"][0]["message"]["content"] or ""
 
+    async def complete_message(
+        self, model: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Pełna wiadomość asystenta, łącznie z ewentualnymi wywołaniami narzędzi."""
+        payload: dict[str, Any] = {"model": model, "messages": messages, "stream": False}
+        if tools:
+            payload["tools"] = tools
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            resp = await client.post(f"{self._base_url}/chat/completions", json=payload)
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]
+
     async def stream(
         self, model: str, messages: list[dict[str, Any]], **params: Any
     ) -> AsyncIterator[bytes]:

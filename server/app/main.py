@@ -20,6 +20,9 @@ from typing import Any
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from .agent.builtin import SPECS, build_registry
+from .agent.policy import PolicyConfig, ToolPolicy
+from .agent.runner import AgentRunner
 from .config import SYSTEM_PROMPTS, Settings, get_settings
 from .llm import LLMClient, OllamaClient
 from .router import ModelRouter
@@ -58,6 +61,8 @@ def create_app(
     pairing = pairing if pairing is not None else PairingManager(tokens, settings.pairing_file)
     store = store if store is not None else Storage(settings.db_file, settings.language)
     router = ModelRouter(settings, llm)
+    # Agent: tylko narzędzia lokalne; sieć i uruchamianie kodu wyłączone (brak wykonawców).
+    agent = AgentRunner(llm, ToolPolicy(SPECS, PolicyConfig()), build_registry(store))  # type: ignore[arg-type]
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
     # Za `tailscale serve` adres klienta pochodzi z X-Forwarded-For; bez niego wszyscy mają 127.0.0.1.
     # Dlatego dwie osobne blokady: ostra dla parowania (kod 50-bitowy) i łagodniejsza dla tokenów
@@ -220,6 +225,38 @@ def create_app(
             },
             headers=headers,
         )
+
+    # --- agent z narzędziami --------------------------------------------
+    @app.post("/v1/agent")
+    async def agent_run(request: Request, device: DeviceToken = Depends(require_device)):
+        """Zadanie z narzędziami. Akcje zmieniające dane wracają jako prośba o zgodę."""
+        try:
+            body = json.loads(await request.body())
+            messages = clean_messages(body.get("messages") if isinstance(body, dict) else None)
+        except (ValidationError, ValueError) as exc:
+            message = str(exc) if isinstance(exc, ValidationError) else "Nieprawidłowy JSON"
+            raise HTTPException(400, message) from None
+        prompt = SYSTEM_PROMPTS.get(store.get_settings().language, SYSTEM_PROMPTS["en"])
+        messages = [m for m in messages if m["role"] != "system"]  # zasad nie nadpisuje klient
+        result = await agent.run(device.id, settings.main_model, [{"role": "system", "content": prompt}, *messages])
+        log.info("agent device=%s steps=%d", device.id, len(result.steps))
+        return JSONResponse(result.to_dict(), headers=SECURITY_HEADERS)
+
+    @app.post("/v1/agent/actions/{action_id}")
+    async def agent_confirm(action_id: str, request: Request, device: DeviceToken = Depends(require_device)):
+        try:
+            body = json.loads(await request.body())
+            approve = body["approve"]
+            if not isinstance(approve, bool):
+                raise ValueError
+        except (ValueError, KeyError, TypeError):
+            raise HTTPException(400, "Wymagane pole approve: true/false") from None
+        try:
+            result = await agent.confirm(device.id, action_id, approve)
+        except KeyError:
+            raise HTTPException(404, "Akcja nie istnieje lub wygasła") from None
+        log.info("agent action %s device=%s", "approved" if approve else "rejected", device.id)
+        return JSONResponse(result.to_dict(), headers=SECURITY_HEADERS)
 
     # --- sparowane telefony --------------------------------------------
     @app.get("/v1/devices")

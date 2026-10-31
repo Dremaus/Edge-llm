@@ -43,6 +43,13 @@ CREATE TABLE IF NOT EXISTS messages (
     created INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS msg_conv ON messages(conversation_id, id);
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notes_device ON notes(device_id, id DESC);
 """
 
 
@@ -191,6 +198,36 @@ class Storage:
             cur = self._db.execute("DELETE FROM conversations WHERE device_id = ?", (device_id,))
             self._db.commit()
         return cur.rowcount
+
+    # --- notatki (narzędzie agenta) ---------------------------------------
+    def add_note(self, device_id: str, text: str) -> int:
+        text = text.strip()[:MAX_NOTE]
+        if not text:
+            raise ValueError("Pusta notatka")
+        with self._lock:
+            count = self._db.execute(
+                "SELECT COUNT(*) FROM notes WHERE device_id = ?", (device_id,)
+            ).fetchone()[0]
+            if count >= MAX_NOTES_PER_DEVICE:
+                raise ValueError("Osiągnięto limit notatek")
+            cur = self._db.execute(
+                "INSERT INTO notes(device_id, text, created) VALUES(?,?,?)",
+                (device_id, text, int(time.time())),
+            )
+            self._db.commit()
+        return int(cur.lastrowid)
+
+    def list_notes(self, device_id: str, limit: int = 20) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT id, text, created FROM notes WHERE device_id = ? ORDER BY id DESC LIMIT ?",
+                (device_id, max(1, min(limit, 100))),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+
+MAX_NOTE = 2000
+MAX_NOTES_PER_DEVICE = 1000
 
 
 def _strip_images(parts: Any) -> Any:
