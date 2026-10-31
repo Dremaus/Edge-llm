@@ -19,7 +19,7 @@ urządzenia, a nic nie jest dostępne z internetu bez uwierzytelnionego, szyfrow
 | --- | --- | --- |
 | Atak z internetu na port urządzenia | Brak otwartych portów; serwer i Ollama tylko na 127.0.0.1; dostęp wyłącznie przez Tailscale (WireGuard); zapora UFW domyślnie blokuje ruch przychodzący | ✅ |
 | Atak z sieci lokalnej (np. przejęty sprzęt w domu) | Serwer i Ollama niewidoczne w LAN; SSH z limitem prób, opcjonalnie tylko klucze | ✅ |
-| Kradzież lub odgadnięcie tokenu | Tokeny 256-bitowe per telefon; na dysku tylko SHA-256; porównanie w stałym czasie; unieważnianie bez restartu; blokada adresu po 5 nieudanych próbach | ✅ |
+| Kradzież lub odgadnięcie tokenu | Tokeny 256-bitowe per telefon; na dysku tylko SHA-256; porównanie w stałym czasie; unieważnianie bez restartu; blokada adresu po 5 nieudanych próbach; parowanie jednorazowym kodem QR (50 bitów, 10 min, spalany po 10 błędach) | ✅ |
 | Podsłuch transmisji | WireGuard (Tailscale) + HTTPS z certyfikatem przez `tailscale serve` | ✅ |
 | Przejęty serwer koordynacyjny Tailscale | Tailnet Lock (podpisy węzłów kluczami użytkownika); docelowo własny relay z E2E | ⚠️ konfiguracja ręczna |
 | Nadużycie zasobów (DoS) | Limit zapytań na urządzenie, limit rozmiaru zapytania (25 MB), limit treści i obrazów, limity pamięci i procesów w systemd | ✅ |
@@ -31,8 +31,8 @@ urządzenia, a nic nie jest dostępne z internetu bez uwierzytelnionego, szyfrow
 | Podatna zależność | Dependabot, `pip-audit` w CI, CodeQL, bandit; instalacja z `requirements.lock` z sumami kontrolnymi | ✅ / lock do wygenerowania |
 | Wyciek sekretu do repozytorium | gitleaks w CI, `.gitignore` dla `.env` i plików tokenów | ✅ |
 | Podmieniony model z Hugging Face | Katalog zatwierdzonych modeli; przypięcie wersji i sum SHA-256 | ⏳ przed wydaniem |
-| Prompt injection (dokumenty, strony WWW, narzędzia) | Narzędzia z zasadą najmniejszych uprawnień; potwierdzenie użytkownika przed akcjami nieodwracalnymi; treść z zewnątrz oznaczana jako niezaufana; brak dostępu narzędzi do tokenów | ⏳ faza 5 |
-| Złośliwy kod uruchamiany przez agenta | Kontener rootless/gVisor bez sieci, z limitem CPU/RAM, osobny katalog projektu | ⏳ faza 5 |
+| Prompt injection (dokumenty, strony WWW, narzędzia) | Polityka narzędzi (`app/agent/policy.py`): poziomy ryzyka, domyślna odmowa, sieć i uruchamianie kodu wyłączone domyślnie, potwierdzenie przed zapisem i akcjami nieodwracalnymi, budżet wywołań; treść z zewnątrz w losowo oznaczonych blokach UNTRUSTED, których nie da się zamknąć od środka | ✅ polityka / ⏳ podpięcie do agenta |
+| Złośliwy kod uruchamiany przez agenta | Podman bez roota + gVisor: bez sieci, system plików tylko do odczytu, bez uprawnień, limity pamięci/CPU/procesów/czasu (`sandbox_command`) | ✅ definicja / ⏳ wdrożenie |
 | Kradzież fizyczna urządzenia | Szyfrowanie dysku (LUKS) z kluczem w TPM/fTPM; Secure Boot | ⏳ |
 | Podmieniona aktualizacja | Aktualizacje podpisane kluczem producenta, weryfikowane przed instalacją; możliwość wycofania | ⏳ |
 | Kradzież telefonu | Token w Keystore/Keychain, blokada biometryczna aplikacji, zdalne unieważnienie tokenu | ⏳ aplikacja |
