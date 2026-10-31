@@ -10,7 +10,7 @@ Cel: na tych samych 100 pytaniach (50 PL, 50 EN) porównać modele i urządzenia
 | Bielik-4.5B-v3.0-Instruct | `hf.co/speakleash/Bielik-4.5B-v3.0-Instruct-GGUF:Q8_0` |
 | Gemma 4 E4B | do ustalenia tag w Ollamie |
 
-Platformy: Jetson Orin Nano Super 8 GB oraz mini PC z Ryzen 7 i 32 GB.
+Platforma: mini PC z AMD Ryzen AI (Vulkan, profil `performance`). Jeśli to możliwe, porównać Ryzen AI 7 350 z HX 370/470 oraz 16 GB z 32 GB.
 
 ## Przebieg
 

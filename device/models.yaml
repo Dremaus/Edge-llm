@@ -26,4 +26,4 @@ models:
     source: ollama-library
     license: Apache-2.0
     optional: true
-    notes: Model kodu na fazę 5; ok. 5,3 GB. Pobierany tylko na urządzeniach z 16+ GB.
+    notes: Model kodu; ok. 5,3 GB. Pobierany automatycznie przy 24+ GB RAM (grafika dzieli pamięć z systemem).

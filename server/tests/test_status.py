@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from app.status import collect, read_meminfo, read_temperatures, read_uptime
+from app.status import (
+    collect,
+    read_amd_gpu,
+    read_hwmon_temperatures,
+    read_meminfo,
+    read_temperatures,
+    read_uptime,
+)
 
 
 def test_meminfo_parsed_to_mb(tmp_path):
@@ -36,9 +43,46 @@ def test_collect_has_no_identifying_data(tmp_path):
         "temperature_c",
         "temperature_warning",
         "memory",
+        "gpu",
         "disk",
         "uptime_s",
         "loaded_models",
     }
     assert status["loaded_models"] == ["qwen3.5:4b"]
     assert status["disk"]["total_gb"] >= 0
+
+
+def test_hwmon_reads_amd_cpu_and_gpu_sensors(tmp_path):
+    for i, (name, temps) in enumerate(
+        [("k10temp", ["71300", "65000"]), ("amdgpu", ["58000"]), ("nvme", ["40000"]), ("amdgpu", ["bad"])]
+    ):
+        chip = tmp_path / f"hwmon{i}"
+        chip.mkdir()
+        (chip / "name").write_text(name + "\n")
+        for j, t in enumerate(temps, start=1):
+            (chip / f"temp{j}_input").write_text(t)
+    # nvme pomijamy; dla procesora bierzemy najgorętszy czujnik
+    assert read_hwmon_temperatures(tmp_path) == {"k10temp": 71.3, "amdgpu": 58.0}
+
+
+def test_amd_gpu_busy_and_shared_memory(tmp_path):
+    other = tmp_path / "card0" / "device"
+    other.mkdir(parents=True)
+    (other / "vendor").write_text("0x8086\n")
+    dev = tmp_path / "card1" / "device"
+    dev.mkdir(parents=True)
+    files = {
+        "vendor": "0x1002",
+        "gpu_busy_percent": "37",
+        "mem_info_vram_used": str(256 * 1024**2),
+        "mem_info_vram_total": str(512 * 1024**2),
+        "mem_info_gtt_used": str(3 * 1024**3),
+        "mem_info_gtt_total": str(16 * 1024**3),
+    }
+    for k, v in files.items():
+        (dev / k).write_text(v)
+    assert read_amd_gpu(tmp_path) == {"busy_percent": 37, "memory_used_mb": 3328, "memory_total_mb": 16896}
+
+
+def test_no_amd_gpu_gives_empty_dict(tmp_path):
+    assert read_amd_gpu(tmp_path) == {}

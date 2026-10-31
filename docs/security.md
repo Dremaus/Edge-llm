@@ -28,14 +28,14 @@ urządzenia, a nic nie jest dostępne z internetu bez uwierzytelnionego, szyfrow
 | Wyciek danych przez przejęty proces serwera | Piaskownica systemd: brak uprawnień, read-only system, `IPAddressDeny=any` (tylko localhost), filtr wywołań systemowych | ✅ |
 | Wyciek przez logi | Logi bez treści rozmów i tokenów; tylko id urządzenia, model, ścieżka routera | ✅ |
 | Ujawnienie szczegółów błędów | Ogólne komunikaty błędów; wyłączone `/docs` i `/openapi.json` w produkcji | ✅ |
-| Podatna zależność | Dependabot, `pip-audit` w CI, CodeQL, bandit; instalacja z `requirements.lock` z sumami kontrolnymi | ✅ / lock do wygenerowania |
+| Podatna zależność | Dependabot, `pip-audit` w CI, CodeQL, bandit; instalacja z `requirements.lock` z sumami kontrolnymi | ✅ |
 | Wyciek sekretu do repozytorium | gitleaks w CI, `.gitignore` dla `.env` i plików tokenów | ✅ |
 | Podmieniony model z Hugging Face | Katalog zatwierdzonych modeli; przypięcie wersji i sum SHA-256 | ⏳ przed wydaniem |
-| Prompt injection (dokumenty, strony WWW, narzędzia) | Polityka narzędzi (`app/agent/policy.py`): poziomy ryzyka, domyślna odmowa, sieć i uruchamianie kodu wyłączone domyślnie, potwierdzenie przed zapisem i akcjami nieodwracalnymi, budżet wywołań; treść z zewnątrz w losowo oznaczonych blokach UNTRUSTED, których nie da się zamknąć od środka | ✅ polityka / ⏳ podpięcie do agenta |
+| Prompt injection (dokumenty, strony WWW, narzędzia) | Polityka narzędzi (`app/agent/policy.py`): poziomy ryzyka, domyślna odmowa, sieć i uruchamianie kodu wyłączone domyślnie, potwierdzenie przed zapisem i akcjami nieodwracalnymi, budżet wywołań; treść z zewnątrz w losowo oznaczonych blokach UNTRUSTED, których nie da się zamknąć od środka | ✅ (endpoint `/v1/agent`, potwierdzenia w aplikacji) |
 | Złośliwy kod uruchamiany przez agenta | Podman bez roota + gVisor: bez sieci, system plików tylko do odczytu, bez uprawnień, limity pamięci/CPU/procesów/czasu (`sandbox_command`) | ✅ definicja / ⏳ wdrożenie |
-| Kradzież fizyczna urządzenia | Szyfrowanie dysku (LUKS) z kluczem w TPM/fTPM; Secure Boot | ⏳ |
+| Kradzież fizyczna urządzenia | Szyfrowanie dysku (LUKS) z kluczem w fTPM/Pluton związanym z Secure Boot (PCR 7), hasło BIOS, blokada startu z USB — instrukcja w docs/hardware.md | 📄 instrukcja / ⏳ automatyzacja |
 | Podmieniona aktualizacja | Aktualizacje podpisane kluczem producenta, weryfikowane przed instalacją; możliwość wycofania | ⏳ |
-| Kradzież telefonu | Token w Keystore/Keychain, blokada biometryczna aplikacji, zdalne unieważnienie tokenu | ⏳ aplikacja |
+| Kradzież telefonu | Token w Keystore/Keychain, blokada biometryczna aplikacji, zdalne unieważnienie tokenu | ✅ |
 
 ## Utwardzenie urządzenia (device/install.sh)
 
@@ -44,6 +44,7 @@ urządzenia, a nic nie jest dostępne z internetu bez uwierzytelnionego, szyfrow
 - Ollama wymuszona na `127.0.0.1:11434`, bez dostępu z przeglądarek (`OLLAMA_ORIGINS`).
 - Serwer jako osobny użytkownik systemowy bez powłoki; kod należy do roota (tylko odczyt).
 - Pliki z tokenami i konfiguracją: uprawnienia 0600/0640, katalog stanu 0700.
+- Ollama w grupach `render`/`video` (dostęp do GPU) — bez innych uprawnień.
 - Opcja `--harden-ssh`: tylko klucze, bez roota (wykonywana tylko, gdy istnieje klucz — bez ryzyka odcięcia).
 
 ## Lista kontrolna przed sprzedażą

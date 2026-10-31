@@ -35,6 +35,7 @@ class _StatusScreenState extends State<StatusScreen> {
             if (st == null) return const Center(child: CircularProgressIndicator());
             final mem = (st['memory'] as Map?) ?? const {};
             final disk = (st['disk'] as Map?) ?? const {};
+            final gpu = (st['gpu'] as Map?) ?? const {};
             final temp = st['temperature_c'];
             return ListView(
               children: [
@@ -50,6 +51,14 @@ class _StatusScreenState extends State<StatusScreen> {
                   title: Text(s.t('memory')),
                   trailing: Text(mem.isEmpty ? '—' : '${mem['available_mb']} / ${mem['total_mb']} MB'),
                 ),
+                if (gpu.isNotEmpty)
+                  ListTile(
+                    leading: const Icon(Icons.developer_board),
+                    title: Text(s.t('gpu')),
+                    trailing: Text(gpu['memory_total_mb'] == null
+                        ? '${gpu['busy_percent']}%'
+                        : '${gpu['busy_percent']}% · ${gpu['memory_used_mb']} / ${gpu['memory_total_mb']} MB'),
+                  ),
                 ListTile(
                   leading: const Icon(Icons.storage),
                   title: Text(s.t('disk')),

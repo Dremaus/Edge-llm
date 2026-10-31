@@ -15,4 +15,6 @@ https://claude.ai/artifact/WgErVzXtiF86DtRptPqoMX
 | 2026-10-31 | Tailscale na start | Najszybsze wdrożenie; potem własny relay z E2E |
 | 2026-10-31 | Licencja Apache 2.0 | Zgodna z licencjami modeli i bibliotek |
 | 2026-10-31 | Bezpieczeństwo: domyślna odmowa i obrona warstwowa | Tylko localhost + Tailscale, tokeny per telefon, piaskownica systemd; szczegóły w docs/security.md |
-| 2026-10-31 | Do zbadania: mini PC x86 (Ryzen 7, 32 GB) zamiast Jetsona | 1,5–4× taniej, 2× więcej pamięci |
+| 2026-10-31 | ~~Do zbadania: mini PC x86 (Ryzen 7, 32 GB) zamiast Jetsona~~ | Rozstrzygnięte niżej |
+| 2026-10-31 | **Platforma: mini PC z AMD Ryzen AI** zamiast Jetsona | Taniej przy 16–32 GB pamięci; x86 + Ubuntu 24.04; TPM i Secure Boot do szyfrowania dysku; NPU na później. Szczegóły: docs/hardware.md |
+| 2026-10-31 | Ollama na Radeonie przez Vulkan, nie ROCm | ~2× szybsze generowanie w pomiarach; działa na wszystkich Ryzen AI |

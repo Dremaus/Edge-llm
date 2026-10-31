@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Instalacja asystenta na urządzeniu (Jetson z JetPack 6.x lub mini PC x86 z Ubuntu 24.04).
+# Instalacja asystenta na urządzeniu.
+# Platforma docelowa: mini PC z AMD Ryzen AI (Radeon 860M/880M/890M), Ubuntu 24.04, kernel 6.14+.
 #
-# Użycie: sudo device/install.sh [--with-code-model] [--harden-ssh]
-#   --with-code-model  pobiera model kodu (urządzenia 16+ GB)
+# Użycie: sudo device/install.sh [--with-code-model|--no-code-model] [--harden-ssh] [--no-performance]
+#   --with-code-model  wymusza pobranie modelu kodu (domyślnie: tylko przy 24+ GB RAM)
+#   --no-code-model    pomija model kodu niezależnie od pamięci
 #   --harden-ssh       wyłącza logowanie hasłem i roota przez SSH (wymaga klucza w authorized_keys)
+#   --no-performance   nie przełącza profilu zasilania na wydajność
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,12 +14,15 @@ INSTALL_DIR=/opt/edge-llm
 STATE_DIR=/var/lib/edge-llm
 SERVICE_USER=edge
 ENV_FILE=/etc/edge-llm.env
-WITH_CODE_MODEL=0
+WITH_CODE_MODEL=auto
 HARDEN_SSH=0
+PERFORMANCE=1
 for arg in "$@"; do
   case "$arg" in
     --with-code-model) WITH_CODE_MODEL=1 ;;
+    --no-code-model) WITH_CODE_MODEL=0 ;;
     --harden-ssh) HARDEN_SSH=1 ;;
+    --no-performance) PERFORMANCE=0 ;;
     *) echo "Nieznana opcja: $arg" >&2; exit 2 ;;
   esac
 done
@@ -27,13 +33,39 @@ if [[ $EUID -ne 0 ]]; then
 fi
 umask 027
 
-echo "==> Pamięć RAM: $(free -g | awk '/Mem:/ {print $2}') GB"
+# Grafika zintegrowana dzieli RAM z systemem, więc o modelach decyduje cała pamięć.
+# free -g zaokrągla w dół (32 GB pokazuje jako 30), stąd próg 24.
+RAM_GB=$(free -g | awk '/Mem:/ {print $2}')
+echo "==> Pamięć RAM: ${RAM_GB} GB"
+if [[ $WITH_CODE_MODEL == auto ]]; then
+  if (( RAM_GB >= 24 )); then WITH_CODE_MODEL=1; else WITH_CODE_MODEL=0; fi
+fi
 
 echo "==> Aktualizacje bezpieczeństwa"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
-apt-get install -y -q ufw unattended-upgrades fail2ban python3-venv openssl curl qrencode
+apt-get install -y -q ufw unattended-upgrades fail2ban python3-venv openssl curl qrencode pciutils
 dpkg-reconfigure -f noninteractive unattended-upgrades
+
+echo "==> Grafika"
+AMD_GPU=0
+for vendor in /sys/class/drm/card[0-9]*/device/vendor; do
+  [[ -r $vendor && $(cat "$vendor") == 0x1002 ]] && AMD_GPU=1
+done
+if (( AMD_GPU )); then
+  # Ollama na zintegrowanym Radeonie: Vulkan (Mesa RADV) — szybsze generowanie niż ROCm
+  # i działa na wszystkich Ryzen AI, także tych spoza listy ROCm (np. Ryzen AI 7 350).
+  apt-get install -y -q mesa-vulkan-drivers vulkan-tools
+  echo "    AMD Radeon wykryty, sterowniki Vulkan zainstalowane"
+else
+  echo "    UWAGA: nie wykryto grafiki AMD — modele będą działać na procesorze (wolno)."
+fi
+echo "    Kernel: $(uname -r) (NPU Ryzen AI dla LLM wymaga 7.0+ lub backportu amdxdna — opcjonalne)"
+
+if (( PERFORMANCE )) && command -v powerprofilesctl >/dev/null; then
+  # Na profilu wydajności generowanie jest o ok. 1/3 szybsze (pomiar dla Radeon 890M).
+  powerprofilesctl set performance && echo "==> Profil zasilania: performance"
+fi
 
 echo "==> Zapora: domyślnie wszystko zablokowane, ruch tylko przez Tailscale"
 ufw default deny incoming
@@ -64,6 +96,10 @@ if ! command -v ollama >/dev/null; then
 fi
 install -d -m 755 /etc/systemd/system/ollama.service.d
 install -m 644 "$REPO_DIR/device/systemd/ollama-hardening.conf" /etc/systemd/system/ollama.service.d/hardening.conf
+# Dostęp do GPU (/dev/dri) mają grupy render i video.
+if id -u ollama >/dev/null 2>&1; then
+  usermod -aG render,video ollama
+fi
 systemctl daemon-reload
 systemctl enable ollama
 systemctl restart ollama
@@ -76,7 +112,7 @@ while IFS= read -r line; do
   elif [[ $line =~ ^[[:space:]]*role:[[:space:]]*(.+)$ && -n $current_id ]]; then
     role="${BASH_REMATCH[1]}"
     if [[ $role == "code" && $WITH_CODE_MODEL -eq 0 ]]; then
-      echo "    pomijam model kodu: $current_id (użyj --with-code-model)"
+      echo "    pomijam model kodu: $current_id (mniej niż 24 GB RAM; wymuś: --with-code-model)"
     else
       echo "    ollama pull $current_id"
       ollama pull "$current_id"

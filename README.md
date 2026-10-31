@@ -23,7 +23,7 @@ Pełny plan projektu (cele, sprzęt, modele, architektura, koszty, roadmapa) jes
   - Bielik-4.5B-v3.0-Instruct: preinstalowany, do włączenia w ustawieniach.
 - **Orkiestracja:** LangGraph; router w MVP to reguły + klasyfikacja małym modelem.
 - **Zdalny dostęp:** Tailscale na start, później własny serwer przekaźnikowy.
-- **Sprzęt:** prototyp na Jetson Orin Nano Super 8 GB; równolegle testujemy mini PC z Ryzen 7 i 32 GB jako tańszą platformę docelową.
+- **Sprzęt:** mini PC z AMD Ryzen AI (zalecane 32 GB DDR5 w dwóch modułach), Ubuntu 24.04, Ollama na zintegrowanym Radeonie przez Vulkan. Szczegóły: [docs/hardware.md](docs/hardware.md).
 
 ## Szybki start (serwer, tryb deweloperski)
 

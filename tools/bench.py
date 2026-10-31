@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark modeli na urządzeniu — tydzień testów (Jetson vs mini PC, Qwen vs Bielik vs Gemma).
+"""Benchmark modeli na urządzeniu — tydzień testów (Ryzen AI: Qwen vs Bielik vs Gemma).
 
 Mierzy z natywnych liczników Ollamy (/api/chat):
 - prędkość generowania (tok/s) = eval_count / eval_duration,
@@ -12,7 +12,7 @@ Wyniki: CSV z pomiarami + arkusz do ślepej oceny jakości (modele pod losowymi 
 
 Użycie:
     python3 tools/bench.py --models qwen3.5:4b,hf.co/speakleash/Bielik-4.5B-v3.0-Instruct-GGUF:Q8_0 \
-        --questions eval/questions_pl.jsonl eval/questions_en.jsonl --out results/jetson
+        --questions eval/questions_pl.jsonl eval/questions_en.jsonl --out results/ryzen-ai
 """
 
 from __future__ import annotations
