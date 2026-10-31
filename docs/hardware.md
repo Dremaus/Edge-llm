@@ -19,12 +19,19 @@ nie jest pobierany (instalator decyduje automatycznie).
 Wersje z pamięcią LPDDR5X-7500 (lutowaną) są o ok. 1/3 szybsze w generowaniu, ale nie da się ich
 rozbudować. Unikamy modułów 24 Gbit w ASUS PN54 — według użytkowników nie działają.
 
-### Oferty Minisforum (sklep EU, 31.10.2026)
+### Oferty Minisforum (minisforumpc.eu, 31.10.2026)
+
+Uwaga: domeny minisforumpc.eu nie ma na liście oficjalnych sklepów na minisforum.com (dla UE jest tam
+store.minisforum.de), choć sama strona podaje się za oficjalną. Przed zakupem porównać ze
+store.minisforum.de i płacić z ochroną kupującego (PayPal, karta).
 
 | Model | Procesor | Konfiguracja | Cena |
 | --- | --- | --- | --- |
 | AI X1 Mini PC | Ryzen 7 H 255 (8 rdzeni, Radeon 780M, bez NPU) | 32 GB + 512 GB | 859 € |
 | AI X1 Mini PC | Ryzen 7 H 255 | 32 GB + 1 TB | 939 € |
+| AI X1 Mini PC | Ryzen AI 9 HX 370 | barebone | 619 € |
+| AI X1 Mini PC | Ryzen AI 9 HX 370 | 32 GB + 1 TB | 1199 € |
+| AI X1 Mini PC | Ryzen AI 9 HX 470 | 32 GB + 1 TB | 1359 € (drożej niż Pro-470) |
 | AI X1 Pro-470 | Ryzen AI 9 HX 470 (12 rdzeni, NPU) | barebone | 729 € |
 | AI X1 Pro-470 | Ryzen AI 9 HX 470 | 32 GB + 1 TB | 1249 € |
 | AI X1 Pro-470 | Ryzen AI 9 HX 470 | 64 GB + 1 TB | 1679 € |
