@@ -35,7 +35,8 @@ pip install -e ".[dev]"
 
 export EDGE_TOKENS_FILE="$PWD/.tokens.json"
 python -m app.security.tokens add "Mój laptop"   # token pokazywany tylko raz
-uvicorn app.main:app --host 127.0.0.1 --port 8080
+export EDGE_DB_FILE="$PWD/.edge.db" EDGE_PAIRING_FILE="$PWD/.pairing.json"
+uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8080
 ```
 
 Test:

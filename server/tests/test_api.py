@@ -6,7 +6,9 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from app.security.pairing import PairingManager
 from app.security.tokens import TokenStore
+from app.storage import Storage
 
 
 class FakeLLM:
@@ -33,7 +35,7 @@ def make_client(language: str = "pl", **overrides: Any):
     store = TokenStore()
     _, token = store.create("test")
     settings = Settings(language=language, main_model="main", router_model="small", **overrides)
-    app = create_app(settings, llm, store)
+    app = create_app(settings, llm, store, PairingManager(store), Storage(default_language=language))
     return TestClient(app), llm, {"Authorization": f"Bearer {token}"}, store
 
 
@@ -143,12 +145,10 @@ def test_streaming_passthrough():
 
 
 def test_pairing_flow_and_lockout():
-    from app.security.pairing import PairingManager
-
     llm = FakeLLM()
     store = TokenStore()
     pairing = PairingManager(store)
-    client = TestClient(create_app(Settings(main_model="main"), llm, store, pairing))
+    client = TestClient(create_app(Settings(main_model="main"), llm, store, pairing, Storage()))
     code, _ = pairing.new_code()
     r = client.post("/v1/pair", json={"code": code, "device_name": "Pixel"})
     assert r.status_code == 200
@@ -167,3 +167,54 @@ def test_models_lists_only_allowed():
     ids = [m["id"] for m in client.get("/v1/models", headers=headers).json()["data"]]
     assert ids[0] == "auto"
     assert "main" in ids and "granite4.2:8b" not in ids  # model kodu wyłączony
+
+
+def test_onboarding_settings_change_language_and_model():
+    client, llm, headers, _ = make_client(alt_model="bielik")
+    assert client.get("/v1/settings", headers=headers).json()["onboarding_done"] is False
+    r = client.patch(
+        "/v1/settings",
+        headers=headers,
+        json={"language": "en", "chat_model": "bielik", "onboarding_done": True},
+    )
+    assert r.status_code == 200
+    chat(client, headers, model="auto")
+    model, messages, _ = llm.seen[-1]
+    assert model == "bielik"
+    assert "in English" in messages[0]["content"]
+    assert client.patch("/v1/settings", headers=headers, json={"language": "de"}).status_code == 400
+
+
+def test_conversation_history_saved_and_isolated():
+    llm = FakeLLM()
+    tokens = TokenStore()
+    _, t1 = tokens.create("a")
+    _, t2 = tokens.create("b")
+    client = TestClient(
+        create_app(Settings(main_model="main"), llm, tokens, PairingManager(tokens), Storage())
+    )
+    h1 = {"Authorization": f"Bearer {t1}"}
+    h2 = {"Authorization": f"Bearer {t2}"}
+    r = chat(client, h1, model="main", save=True)
+    conv_id = r.json()["edge"]["conversation_id"]
+    conv = client.get(f"/v1/conversations/{conv_id}", headers=h1).json()
+    assert [m["role"] for m in conv["messages"]] == ["user", "assistant"]
+    # Drugi telefon nie widzi ani nie może dopisać się do cudzej rozmowy.
+    assert client.get(f"/v1/conversations/{conv_id}", headers=h2).status_code == 404
+    assert chat(client, h2, model="main", conversation_id=conv_id).status_code == 404
+    assert client.get("/v1/conversations", headers=h2).json()["data"] == []
+    assert client.delete(f"/v1/conversations/{conv_id}", headers=h1).status_code == 200
+
+
+def test_streamed_reply_is_saved_to_history():
+    client, _, headers, _ = make_client()
+    with client.stream(
+        "POST",
+        "/v1/chat/completions",
+        headers=headers,
+        json={"model": "main", "stream": True, "save": True, "messages": [{"role": "user", "content": "Hej"}]},
+    ) as r:
+        conv_id = r.headers["X-Edge-Conversation"]
+        b"".join(r.iter_bytes())
+    conv = client.get(f"/v1/conversations/{conv_id}", headers=headers).json()
+    assert conv["messages"][-1]["content"] == "Cze"

@@ -104,6 +104,17 @@ async def test_unparsed_answer_falls_back_to_chat():
     assert out["model"] == "main"
 
 
+async def test_bielik_preference_applies_to_chat_but_not_images():
+    r = ModelRouter(settings(alt_model="bielik"), FakeLLM(answer="chat"))
+    chat = await r.route(user("Opowiedz mi bajkę"), prefer_alt=True)
+    assert chat["model"] == "bielik"
+    image = await r.route(
+        [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "data:image/png;base64,AA"}}]}],
+        prefer_alt=True,
+    )
+    assert image["model"] == "main"
+
+
 def test_parse_label():
     assert parse_label("  Multistep.") == "multistep"
     assert parse_label("The answer: code") == "code"

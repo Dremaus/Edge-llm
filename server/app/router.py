@@ -47,6 +47,9 @@ class RouterState(TypedDict, total=False):
     route: Route
     reason: str
     model: str
+    # Użytkownik wybrał Bielika do rozmów (ustawienia). Obrazy i kod zostają na innych modelach,
+    # bo Bielik nie rozumie obrazów.
+    prefer_alt: bool
 
 
 def _last_user_text(messages: list[dict[str, Any]]) -> str:
@@ -120,6 +123,8 @@ class ModelRouter:
             model = s.router_model
         elif route == "code" and s.code_model_enabled:
             model = s.code_model
+        elif route in ("chat", "multistep") and state.get("prefer_alt"):
+            model = s.alt_model
         else:
             model = s.main_model
         log.info("route=%s reason=%s model=%s", route, state.get("reason"), model)
@@ -141,5 +146,5 @@ class ModelRouter:
         graph.add_edge("pick_model", END)
         return graph.compile()
 
-    async def route(self, messages: list[dict[str, Any]]) -> RouterState:
-        return await self._graph.ainvoke({"messages": messages})
+    async def route(self, messages: list[dict[str, Any]], prefer_alt: bool = False) -> RouterState:
+        return await self._graph.ainvoke({"messages": messages, "prefer_alt": prefer_alt})

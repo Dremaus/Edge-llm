@@ -16,6 +16,8 @@ class Settings:
     tokens_file: str = field(
         default_factory=lambda: _env("EDGE_TOKENS_FILE", "/var/lib/edge-llm/tokens.json")
     )
+    # Ustawienia urządzenia i historia rozmów (SQLite).
+    db_file: str = field(default_factory=lambda: _env("EDGE_DB_FILE", "/var/lib/edge-llm/edge.db"))
     # Jednorazowe kody parowania (patrz app/security/pairing.py).
     pairing_file: str = field(
         default_factory=lambda: _env("EDGE_PAIRING_FILE", "/var/lib/edge-llm/pairing.json")

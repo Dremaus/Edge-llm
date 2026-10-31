@@ -26,6 +26,8 @@ from .security.pairing import PairingError, PairingManager
 from .security.ratelimit import FailureLockout, TokenBucket
 from .security.tokens import DeviceToken, TokenStore
 from .security.validation import ValidationError, clean_messages, clean_params
+from .sse import tee_stream
+from .storage import SettingsError, Storage
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 log = logging.getLogger("edge.api")
@@ -46,11 +48,13 @@ def create_app(
     llm: LLMClient | None = None,
     tokens: TokenStore | None = None,
     pairing: PairingManager | None = None,
+    store: Storage | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     llm = llm or OllamaClient(settings.ollama_url, settings.request_timeout_s)
     tokens = tokens if tokens is not None else TokenStore(settings.tokens_file)
     pairing = pairing if pairing is not None else PairingManager(tokens, settings.pairing_file)
+    store = store if store is not None else Storage(settings.db_file, settings.language)
     router = ModelRouter(settings, llm)
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
     lockout = FailureLockout()
@@ -151,14 +155,23 @@ def create_app(
             message = str(exc) if isinstance(exc, ValidationError) else "Nieprawidłowy JSON"
             raise HTTPException(400, message) from None
 
+        user_settings = store.get_settings()
         if not any(m["role"] == "system" for m in messages):
-            prompt = SYSTEM_PROMPTS.get(settings.language, SYSTEM_PROMPTS["en"])
+            prompt = SYSTEM_PROMPTS.get(user_settings.language, SYSTEM_PROMPTS["en"])
             messages = [{"role": "system", "content": prompt}, *messages]
+
+        # Historia: istniejąca rozmowa tego telefonu albo nowa, gdy save=true.
+        conv_id = body.get("conversation_id")
+        if conv_id is not None:
+            if not isinstance(conv_id, str) or not store.owns(device.id, conv_id):
+                raise HTTPException(404, "Nie znaleziono rozmowy")
+        elif body.get("save") is True:
+            conv_id = store.create_conversation(device.id, _title(messages))
 
         model = body.get("model") or AUTO_MODEL
         route_info: dict[str, Any] = {}
         if model == AUTO_MODEL:
-            decision = await router.route(messages)
+            decision = await router.route(messages, prefer_alt=user_settings.chat_model == "bielik")
             model = decision["model"]
             route_info = {"route": decision["route"], "reason": decision.get("reason")}
         elif model not in settings.allowed_models:
@@ -168,15 +181,23 @@ def create_app(
         headers = {**SECURITY_HEADERS, "X-Edge-Model": model}
         if route_info:
             headers["X-Edge-Route"] = str(route_info["route"])
+        if conv_id:
+            headers["X-Edge-Conversation"] = conv_id
+            store.add_message(device.id, conv_id, "user", messages[-1]["content"])
+
+        def save_reply(text: str) -> None:
+            if conv_id and text:
+                store.add_message(device.id, conv_id, "assistant", text, model=model)
 
         if body.get("stream") is True:
             return StreamingResponse(
-                llm.stream(model, messages, **params),
+                tee_stream(llm.stream(model, messages, **params), save_reply),
                 media_type="text/event-stream",
                 headers=headers,
             )
 
         content = await llm.complete(model, messages, **params)
+        save_reply(content)
         return JSONResponse(
             {
                 "object": "chat.completion",
@@ -188,12 +209,59 @@ def create_app(
                         "finish_reason": "stop",
                     }
                 ],
-                "edge": route_info,
+                "edge": {**route_info, "conversation_id": conv_id},
             },
             headers=headers,
         )
 
+    # --- ustawienia (kreator pierwszego uruchomienia) -------------------
+    @app.get("/v1/settings")
+    async def get_device_settings(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        return store.get_settings().to_dict()
+
+    @app.patch("/v1/settings")
+    async def patch_device_settings(
+        request: Request, device: DeviceToken = Depends(require_device)
+    ) -> dict[str, Any]:
+        try:
+            changes = json.loads(await request.body())
+            if not isinstance(changes, dict):
+                raise SettingsError("Nieprawidłowe zapytanie")
+            updated = store.update_settings(changes)
+        except (SettingsError, ValueError) as exc:
+            msg = str(exc) if isinstance(exc, SettingsError) else "Nieprawidłowy JSON"
+            raise HTTPException(400, msg) from None
+        log.info("settings changed by device=%s keys=%s", device.id, sorted(changes))
+        return updated.to_dict()
+
+    # --- historia rozmów ------------------------------------------------
+    @app.get("/v1/conversations")
+    async def list_conversations(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        return {"data": store.list_conversations(device.id)}
+
+    @app.get("/v1/conversations/{conv_id}")
+    async def get_conversation(conv_id: str, device: DeviceToken = Depends(require_device)):
+        conv = store.get_conversation(device.id, conv_id)
+        if conv is None:
+            raise HTTPException(404, "Nie znaleziono rozmowy")
+        return conv
+
+    @app.delete("/v1/conversations/{conv_id}")
+    async def delete_conversation(conv_id: str, device: DeviceToken = Depends(require_device)):
+        if not store.delete_conversation(device.id, conv_id):
+            raise HTTPException(404, "Nie znaleziono rozmowy")
+        return {"deleted": conv_id}
+
+    @app.delete("/v1/conversations")
+    async def delete_all_conversations(device: DeviceToken = Depends(require_device)):
+        return {"deleted": store.delete_all(device.id)}
+
     return app
 
 
-app = create_app()
+def _title(messages: list[dict[str, Any]]) -> str:
+    content = messages[-1].get("content")
+    if isinstance(content, list):
+        content = " ".join(p.get("text", "") for p in content if p.get("type") == "text")
+    return str(content or "")[:80]
+
