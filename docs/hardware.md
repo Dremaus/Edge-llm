@@ -21,9 +21,8 @@ rozbudować. Unikamy modułów 24 Gbit w ASUS PN54 — według użytkowników ni
 
 ### Oferty Minisforum (minisforumpc.eu, 31.10.2026)
 
-Uwaga: domeny minisforumpc.eu nie ma na liście oficjalnych sklepów na minisforum.com (dla UE jest tam
-store.minisforum.de), choć sama strona podaje się za oficjalną. Przed zakupem porównać ze
-store.minisforum.de i płacić z ochroną kupującego (PayPal, karta).
+minisforumpc.eu to oficjalny sklep UE: store.minisforum.de (wymieniony na minisforum.com) przekierowuje
+na tę domenę (sprawdzone 31.10.2026). Mimo to płacić z ochroną kupującego (PayPal, karta).
 
 | Model | Procesor | Konfiguracja | Cena |
 | --- | --- | --- | --- |
