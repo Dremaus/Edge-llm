@@ -8,7 +8,7 @@ a do tego TPM i Secure Boot do szyfrowania dysku.
 
 | Element | Minimum | Zalecane | Uwagi |
 | --- | --- | --- | --- |
-| Procesor | Ryzen AI 5 340 / AI 7 350 | Ryzen AI 9 HX 370 / HX 470 | Prędkość generowania zależy głównie od pamięci, nie od rdzeni grafiki |
+| Procesor | Ryzen 7 H 255 (Radeon 780M, bez NPU) / Ryzen AI 7 350 | Ryzen AI 9 HX 370 / HX 470 | Prędkość generowania zależy głównie od pamięci, nie od rdzeni grafiki |
 | RAM | 16 GB DDR5-5600, dwa moduły | 32 GB DDR5-5600, dwa moduły | **Musi być dwukanałowo** (2 kości) — jedna kość = połowa prędkości |
 | Dysk | 512 GB NVMe | 1 TB NVMe | Modele zajmują ok. 15 GB; reszta na dane i kopie |
 | System | Ubuntu 24.04 LTS | jw., kernel HWE 6.14+ | Kernel 7.0+ potrzebny tylko do NPU |
@@ -18,6 +18,19 @@ nie jest pobierany (instalator decyduje automatycznie).
 
 Wersje z pamięcią LPDDR5X-7500 (lutowaną) są o ok. 1/3 szybsze w generowaniu, ale nie da się ich
 rozbudować. Unikamy modułów 24 Gbit w ASUS PN54 — według użytkowników nie działają.
+
+### Oferty Minisforum (sklep EU, 31.10.2026)
+
+| Model | Procesor | Konfiguracja | Cena |
+| --- | --- | --- | --- |
+| AI X1 Mini PC | Ryzen 7 H 255 (8 rdzeni, Radeon 780M, bez NPU) | 32 GB + 512 GB | 859 € |
+| AI X1 Mini PC | Ryzen 7 H 255 | 32 GB + 1 TB | 939 € |
+| AI X1 Pro-470 | Ryzen AI 9 HX 470 (12 rdzeni, NPU) | barebone | 729 € |
+| AI X1 Pro-470 | Ryzen AI 9 HX 470 | 32 GB + 1 TB | 1249 € |
+| AI X1 Pro-470 | Ryzen AI 9 HX 470 | 64 GB + 1 TB | 1679 € |
+
+Wariant „Lite” = H 255 (ta sama pamięć DDR5-5600, więc podobna prędkość generowania; wolniejsze
+przetwarzanie długich promptów i zdjęć, brak NPU). Wariant „Pro” = HX 470.
 
 ## Jak liczymy modele
 
