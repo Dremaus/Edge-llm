@@ -33,15 +33,16 @@ cd server
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-export EDGE_API_TOKEN="zmien-mnie"
-uvicorn app.main:app --host 0.0.0.0 --port 8080
+export EDGE_TOKENS_FILE="$PWD/.tokens.json"
+python -m app.security.tokens add "Mój laptop"   # token pokazywany tylko raz
+uvicorn app.main:app --host 127.0.0.1 --port 8080
 ```
 
 Test:
 
 ```bash
-curl -N http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer zmien-mnie" \
+curl -N http://127.0.0.1:8080/v1/chat/completions \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"model":"auto","stream":true,"messages":[{"role":"user","content":"Cześć! Kim jesteś?"}]}'
 ```
@@ -58,6 +59,10 @@ sudo device/install.sh
 
 Skrypt instaluje Ollamę, pobiera modele z `device/models.yaml` i uruchamia serwer jako usługę systemd. Szczegóły w `device/README.md`.
 
+## Bezpieczeństwo
+
+Urządzenie nie ma żadnych portów dostępnych z internetu ani z sieci lokalnej: serwer i Ollama nasłuchują tylko na `127.0.0.1`, a telefon łączy się przez szyfrowany tunel Tailscale. Każdy telefon ma własny, unieważnialny token. Model zagrożeń i pełna lista zabezpieczeń: [docs/security.md](docs/security.md). Zgłaszanie podatności: [SECURITY.md](SECURITY.md).
+
 ## Licencja
 
-Do decyzji (proponowana Apache 2.0 — zgodna z licencjami użytych modeli i bibliotek).
+[Apache License 2.0](LICENSE).

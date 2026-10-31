@@ -5,6 +5,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .env
+*.env
+.tokens.json
+tokens.json
+*.pem
+*.key
 *.db
 *.gguf
 models/

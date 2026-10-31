@@ -13,4 +13,6 @@ https://claude.ai/artifact/WgErVzXtiF86DtRptPqoMX
 | 2026-10-31 | Bez bramy LLM (LiteLLM, Portkey) | Jeden backend na urządzeniu — Ollama |
 | 2026-10-31 | Narzędzia przez MCP | Niezależność od frameworka agentowego |
 | 2026-10-31 | Tailscale na start | Najszybsze wdrożenie; potem własny relay z E2E |
+| 2026-10-31 | Licencja Apache 2.0 | Zgodna z licencjami modeli i bibliotek |
+| 2026-10-31 | Bezpieczeństwo: domyślna odmowa i obrona warstwowa | Tylko localhost + Tailscale, tokeny per telefon, piaskownica systemd; szczegóły w docs/security.md |
 | 2026-10-31 | Do zbadania: mini PC x86 (Ryzen 7, 32 GB) zamiast Jetsona | 1,5–4× taniej, 2× więcej pamięci |

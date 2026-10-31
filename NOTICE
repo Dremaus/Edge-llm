@@ -1,0 +1,8 @@
+edge-llm
+Copyright 2026 The edge-llm authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Model weights downloaded at install time (Qwen3.5, Bielik v3, Granite 4.2) are
+not part of this repository and are distributed under their own licenses
+(Apache License 2.0 at the time of writing); see device/models.yaml.

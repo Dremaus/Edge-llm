@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   server-tests:
     runs-on: ubuntu-latest
@@ -13,14 +16,36 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -q
 
+  security-scan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e . pip-audit bandit
+      # Znane podatności w zależnościach (baza PyPA / OSV).
+      - run: pip-audit --strict --skip-editable
+      # Statyczna analiza bezpieczeństwa kodu Pythona.
+      - run: bandit -r app -ll
+
   shell-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - run: shellcheck device/install.sh

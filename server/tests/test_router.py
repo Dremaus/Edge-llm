@@ -29,7 +29,6 @@ class FakeLLM:
 
 def settings(**overrides: Any) -> Settings:
     base = dict(
-        api_token="t",
         router_model="small",
         main_model="main",
         code_model="coder",

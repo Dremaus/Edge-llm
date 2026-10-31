@@ -8,16 +8,49 @@ Requires=ollama.service
 User=edge
 Group=edge
 EnvironmentFile=/etc/edge-llm.env
+Environment=EDGE_TOKENS_FILE=/var/lib/edge-llm/tokens.json
 WorkingDirectory=/opt/edge-llm/server
-ExecStart=/opt/edge-llm/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8080
+# Tylko localhost. Z zewnątrz dostęp wyłącznie przez `tailscale serve` (HTTPS w sieci Tailscale).
+ExecStart=/opt/edge-llm/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8080 --no-server-header --proxy-headers --forwarded-allow-ips=127.0.0.1
 Restart=on-failure
 RestartSec=5
+UMask=0077
+
+# Katalog na tokeny, historię rozmów (SQLite) i stan zadań: /var/lib/edge-llm (0700)
+StateDirectory=edge-llm
+StateDirectoryMode=0700
+
+# --- Piaskownica systemd ---
 NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-# Katalog na historię rozmów (SQLite) i stan zadań LangGraph: /var/lib/edge-llm
-StateDirectory=edge-llm
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RemoveIPC=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Serwer rozmawia tylko z Ollamą na localhost — nie może wysyłać danych do internetu.
+IPAddressDeny=any
+IPAddressAllow=localhost
+# Limity zasobów, żeby zawieszony proces nie zablokował urządzenia.
+MemoryMax=2G
+TasksMax=256
 
 [Install]
 WantedBy=multi-user.target
