@@ -1,0 +1,28 @@
+name: Lock dependencies
+
+# Generuje server/requirements.lock z sumami kontrolnymi (pip-compile --generate-hashes).
+# Instalator urządzenia używa pliku z `pip install --require-hashes`, więc podmieniona paczka
+# na PyPI nie zostanie zainstalowana. Uruchamiane ręcznie; wynik do przejrzenia i commitu.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-tools
+      - run: pip-compile --generate-hashes --strip-extras --output-file server/requirements.lock server/pyproject.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: requirements-lock
+          path: server/requirements.lock
