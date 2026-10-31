@@ -67,7 +67,7 @@ def test_requires_valid_token():
 
 def test_lockout_after_repeated_failures():
     client, _, good, _ = make_client()
-    for _ in range(5):
+    for _ in range(20):
         chat(client, {"Authorization": "Bearer edge_wrong"})
     # Nawet poprawny token jest blokowany z tego adresu do końca blokady.
     assert chat(client, good).status_code == 429
@@ -160,6 +160,8 @@ def test_pairing_flow_and_lockout():
     for _ in range(4):
         client.post("/v1/pair", json={"code": "AAAA-AAAA-AA"})
     assert client.post("/v1/pair", json={"code": "AAAA-AAAA-AA"}).status_code == 429
+    # Blokada parowania nie odcina sparowanego telefonu od czatu.
+    assert client.get("/v1/models", headers={"Authorization": f"Bearer {token}"}).status_code == 200
 
 
 def test_models_lists_only_allowed():

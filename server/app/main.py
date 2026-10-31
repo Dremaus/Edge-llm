@@ -59,7 +59,11 @@ def create_app(
     store = store if store is not None else Storage(settings.db_file, settings.language)
     router = ModelRouter(settings, llm)
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
-    lockout = FailureLockout()
+    # Za `tailscale serve` adres klienta pochodzi z X-Forwarded-For; bez niego wszyscy mają 127.0.0.1.
+    # Dlatego dwie osobne blokady: ostra dla parowania (kod 50-bitowy) i łagodniejsza dla tokenów
+    # (256 bitów — odgadnięcie niewykonalne), żeby jeden źle skonfigurowany telefon nie odciął innych.
+    lockout = FailureLockout(max_failures=20, window_s=300, lockout_s=900)
+    pair_lockout = FailureLockout(max_failures=5, window_s=600, lockout_s=1800)
 
     app = FastAPI(
         title="edge-llm",
@@ -119,7 +123,7 @@ def create_app(
     async def pair(request: Request) -> dict[str, Any]:
         """Wymiana jednorazowego kodu z QR na token telefonu (bez uwierzytelnienia)."""
         key = client_key(request)
-        if lockout.is_blocked(key):
+        if pair_lockout.is_blocked(key):
             raise HTTPException(429, "Zbyt wiele nieudanych prób. Spróbuj później.")
         raw = await request.body()
         if len(raw) > 1024:
@@ -133,10 +137,10 @@ def create_app(
         try:
             device_id, token = pairing.redeem(code, name)
         except PairingError:
-            lockout.record_failure(key)
+            pair_lockout.record_failure(key)
             log.warning("pairing failed from=%s", key)
             raise HTTPException(401, "Nieprawidłowy lub wygasły kod") from None
-        lockout.record_success(key)
+        pair_lockout.record_success(key)
         log.info("paired device=%s", device_id)
         return {"device_id": device_id, "token": token}
 
@@ -162,13 +166,9 @@ def create_app(
             prompt = SYSTEM_PROMPTS.get(user_settings.language, SYSTEM_PROMPTS["en"])
             messages = [{"role": "system", "content": prompt}, *messages]
 
-        # Historia: istniejąca rozmowa tego telefonu albo nowa, gdy save=true.
         conv_id = body.get("conversation_id")
-        if conv_id is not None:
-            if not isinstance(conv_id, str) or not store.owns(device.id, conv_id):
-                raise HTTPException(404, "Nie znaleziono rozmowy")
-        elif body.get("save") is True:
-            conv_id = store.create_conversation(device.id, _title(messages))
+        if conv_id is not None and (not isinstance(conv_id, str) or not store.owns(device.id, conv_id)):
+            raise HTTPException(404, "Nie znaleziono rozmowy")
 
         model = body.get("model") or AUTO_MODEL
         route_info: dict[str, Any] = {}
@@ -179,13 +179,18 @@ def create_app(
         elif model not in settings.allowed_models:
             raise HTTPException(400, "Niedozwolony model")
 
+        # Nową rozmowę zakładamy dopiero po pełnej walidacji (bez pustych wpisów po błędach).
+        if conv_id is None and body.get("save") is True:
+            conv_id = store.create_conversation(device.id, _title(messages))
+
         log.info("chat device=%s model=%s route=%s", device.id, model, route_info.get("route"))
         headers = {**SECURITY_HEADERS, "X-Edge-Model": model}
         if route_info:
             headers["X-Edge-Route"] = str(route_info["route"])
         if conv_id:
             headers["X-Edge-Conversation"] = conv_id
-            store.add_message(device.id, conv_id, "user", messages[-1]["content"])
+            last = messages[-1]
+            store.add_message(device.id, conv_id, last["role"], last["content"])
 
         def save_reply(text: str) -> None:
             if conv_id and text:
