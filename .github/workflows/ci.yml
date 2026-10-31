@@ -23,6 +23,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest -q
+      - run: pytest -q ../tools/test_bench.py
 
   security-scan:
     runs-on: ubuntu-latest

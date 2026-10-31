@@ -18,3 +18,4 @@ mobile/**/build/
 mobile/**/.dart_tool/
 .DS_Store
 .pairing.json
+results/
