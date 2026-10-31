@@ -2,7 +2,7 @@
 name = "edge-llm-server"
 version = "0.1.0"
 description = "Serwer API asystenta AI na urządzeniu brzegowym: router LangGraph + Ollama"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",

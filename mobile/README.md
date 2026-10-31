@@ -35,8 +35,8 @@ Zakaz zrzutów ekranu i podglądu w przełączniku aplikacji (Android): w `MainA
 - [x] Token przechowywany wyłącznie w Android Keystore / iOS Keychain (nigdy w SharedPreferences ani w plikach)
 - [x] Blokada aplikacji biometrią lub PIN-em; ukrywanie treści na podglądzie ostatnich aplikacji
 - [x] Połączenia tylko HTTPS do adresu urządzenia w sieci Tailscale (`*.ts.net`); brak zgody na HTTP i niezaufane certyfikaty
-- [ ] Historia rozmów w telefonie szyfrowana (np. SQLCipher) albo przechowywana tylko na urządzeniu
-- [ ] Brak analityki i zewnętrznych SDK śledzących; brak logowania treści rozmów
+- [x] Historia rozmów przechowywana tylko na urządzeniu (telefon jej nie zapisuje)
+- [x] Brak analityki i zewnętrznych SDK śledzących; brak logowania treści rozmów
 - [x] Wylogowanie = usunięcie tokenu z telefonu + prośba o unieważnienie na urządzeniu
 - [ ] Zrzuty ekranu zablokowane na ekranie z tokenem i kodem QR (FLAG_SECURE)
 

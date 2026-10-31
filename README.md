@@ -27,7 +27,7 @@ Pełny plan projektu (cele, sprzęt, modele, architektura, koszty, roadmapa) jes
 
 ## Szybki start (serwer, tryb deweloperski)
 
-Wymagania: Python 3.11+, działająca Ollama (`http://localhost:11434`).
+Wymagania: Python 3.10+, działająca Ollama (`http://localhost:11434`).
 
 ```bash
 cd server
