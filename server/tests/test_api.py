@@ -218,3 +218,11 @@ def test_streamed_reply_is_saved_to_history():
         b"".join(r.iter_bytes())
     conv = client.get(f"/v1/conversations/{conv_id}", headers=headers).json()
     assert conv["messages"][-1]["content"] == "Cze"
+
+
+def test_status_endpoint_requires_auth_and_reports_numbers():
+    client, _, headers, _ = make_client()
+    assert client.get("/v1/status").status_code == 401
+    body = client.get("/v1/status", headers=headers).json()
+    assert body["status"] == "ok"
+    assert "memory" in body and "temperature_c" in body

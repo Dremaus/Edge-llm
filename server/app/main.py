@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
@@ -27,6 +28,7 @@ from .security.ratelimit import FailureLockout, TokenBucket
 from .security.tokens import DeviceToken, TokenStore
 from .security.validation import ValidationError, clean_messages, clean_params
 from .sse import tee_stream
+from .status import collect
 from .storage import SettingsError, Storage
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -213,6 +215,19 @@ def create_app(
             },
             headers=headers,
         )
+
+    # --- stan urządzenia -----------------------------------------------
+    @app.get("/v1/status")
+    async def device_status(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        loaded: list[str] = []
+        getter = getattr(llm, "loaded_models", None)
+        if getter is not None:
+            try:
+                loaded = await getter()
+            except Exception:  # Ollama niedostępna — status nadal ma sens
+                log.warning("ollama /api/ps unavailable")
+        state_dir = str(Path(settings.db_file).parent)
+        return {"status": "ok", **collect(state_dir, loaded)}
 
     # --- ustawienia (kreator pierwszego uruchomienia) -------------------
     @app.get("/v1/settings")

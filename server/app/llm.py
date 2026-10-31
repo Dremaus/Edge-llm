@@ -49,3 +49,11 @@ class OllamaClient:
             resp = await client.get(f"{self._base_url}/models")
             resp.raise_for_status()
             return [m["id"] for m in resp.json().get("data", [])]
+
+    async def loaded_models(self) -> list[str]:
+        """Modele aktualnie załadowane do pamięci (natywne API Ollamy: /api/ps)."""
+        native = self._base_url.removesuffix("/v1")
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
+            resp = await client.get(f"{native}/api/ps")
+            resp.raise_for_status()
+            return [m["name"] for m in resp.json().get("models", [])]
