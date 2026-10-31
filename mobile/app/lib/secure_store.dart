@@ -27,6 +27,10 @@ class SecureStore {
 
   Future<void> setLang(String lang) => _s.write(key: 'lang', value: lang);
 
+  Future<bool> lockEnabled() async => (await _s.read(key: 'app_lock')) != '0';
+
+  Future<void> setLockEnabled(bool on) => _s.write(key: 'app_lock', value: on ? '1' : '0');
+
   /// Wylogowanie: usuwa token z telefonu.
   Future<void> clear() => _s.deleteAll();
 }

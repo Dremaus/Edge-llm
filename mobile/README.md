@@ -17,25 +17,27 @@ Uprawnienia do aparatu (skaner QR):
 - Android: `android/app/src/main/AndroidManifest.xml` — `<uses-permission android:name="android.permission.CAMERA"/>`
 - iOS: `ios/Runner/Info.plist` — klucz `NSCameraUsageDescription`
 
+Blokada biometryczna (local_auth) na Androidzie wymaga, by `MainActivity` dziedziczyła po `FlutterFragmentActivity`; na iOS dodaj `NSFaceIDUsageDescription` do `Info.plist`. Wybór zdjęć (image_picker) na iOS wymaga `NSPhotoLibraryUsageDescription`.
+
 Zakaz zrzutów ekranu i podglądu w przełączniku aplikacji (Android): w `MainActivity` ustawić `window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)`.
 
 ## Zakres MVP
 
 - [x] Kreator pierwszego uruchomienia: wybór języka (Polski / English), parowanie kodem QR, wybór modelu (Qwen3.5-4B domyślnie; przy polskim podpowiedź „Użyj Bielika”)
 - [x] Czat ze strumieniowaniem odpowiedzi (SSE z `/v1/chat/completions`, model `auto`)
-- [ ] Lista rozmów i historia
-- [ ] Wysyłanie zdjęć do modelu (treść `image_url`)
-- [ ] Status urządzenia: online/offline, temperatura, pamięć
+- [x] Lista rozmów i historia
+- [x] Wysyłanie zdjęć do modelu (treść `image_url`)
+- [x] Status urządzenia: online/offline, temperatura, pamięć
 - [ ] Działanie w sieci domowej i poza nią (Tailscale)
 
 ## Wymagania bezpieczeństwa aplikacji
 
 - [x] Token przechowywany wyłącznie w Android Keystore / iOS Keychain (nigdy w SharedPreferences ani w plikach)
-- [ ] Blokada aplikacji biometrią lub PIN-em; ukrywanie treści na podglądzie ostatnich aplikacji
+- [x] Blokada aplikacji biometrią lub PIN-em; ukrywanie treści na podglądzie ostatnich aplikacji
 - [x] Połączenia tylko HTTPS do adresu urządzenia w sieci Tailscale (`*.ts.net`); brak zgody na HTTP i niezaufane certyfikaty
 - [ ] Historia rozmów w telefonie szyfrowana (np. SQLCipher) albo przechowywana tylko na urządzeniu
 - [ ] Brak analityki i zewnętrznych SDK śledzących; brak logowania treści rozmów
-- [ ] Wylogowanie = usunięcie tokenu z telefonu + prośba o unieważnienie na urządzeniu
+- [x] Wylogowanie = usunięcie tokenu z telefonu + prośba o unieważnienie na urządzeniu
 - [ ] Zrzuty ekranu zablokowane na ekranie z tokenem i kodem QR (FLAG_SECURE)
 
 ## Kontrakt z serwerem

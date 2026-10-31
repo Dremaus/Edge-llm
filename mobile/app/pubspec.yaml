@@ -14,6 +14,10 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   # Skanowanie kodu QR parowania.
   mobile_scanner: ^5.2.3
+  # Zdjęcia do analizy (zmniejszane przy wyborze).
+  image_picker: ^1.1.2
+  # Blokada aplikacji biometrią / PIN-em telefonu.
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:

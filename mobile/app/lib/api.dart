@@ -102,6 +102,17 @@ class EdgeApi {
   Future<List<dynamic>> conversations() async =>
       (await _json('GET', '/v1/conversations'))['data'] as List<dynamic>;
 
+  Future<Map<String, dynamic>> conversation(String id) =>
+      _json('GET', '/v1/conversations/${Uri.encodeComponent(id)}');
+
+  Future<void> deleteConversation(String id) =>
+      _json('DELETE', '/v1/conversations/${Uri.encodeComponent(id)}');
+
+  Future<List<dynamic>> devices() async => (await _json('GET', '/v1/devices'))['data'] as List<dynamic>;
+
+  /// Wylogowanie: unieważnia token tego telefonu na urządzeniu.
+  Future<void> unpairSelf() => _json('DELETE', '/v1/devices/me');
+
   /// Strumień fragmentów odpowiedzi. `onConversation` dostaje id rozmowy z nagłówka.
   Stream<String> chat(
     List<Map<String, dynamic>> messages, {
