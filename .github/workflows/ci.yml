@@ -26,7 +26,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e ".[dev]"
+      # Instalacja dokładnie tak jak na urządzeniu: przypięte wersje z weryfikacją sum kontrolnych.
+      - run: pip install --require-hashes -r requirements.lock
+      - run: pip install --no-deps -e . && pip install "pytest>=8" "pytest-asyncio>=0.23"
       - name: pytest
         run: |
           set +e
