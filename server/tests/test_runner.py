@@ -81,7 +81,9 @@ def test_confirmation_cannot_be_used_by_another_phone_or_twice():
     pending = run(r.run("phone-a", "m", user("zanotuj"))).pending
     with pytest.raises(KeyError):
         run(r.confirm("phone-b", pending.id, approve=True))
-    with pytest.raises(KeyError):  # zgoda została zużyta (i nie wróci)
+    # Próba z cudzego telefonu nie zużyła zgody — właściciel nadal może zdecydować, ale tylko raz.
+    run(r.confirm("phone-a", pending.id, approve=False))
+    with pytest.raises(KeyError):
         run(r.confirm("phone-a", pending.id, approve=True))
 
 

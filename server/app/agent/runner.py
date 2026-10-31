@@ -106,9 +106,11 @@ class AgentRunner:
     async def confirm(self, device_id: str, action_id: str, approve: bool) -> AgentResult:
         with self._lock:
             self._expire()
-            pending = self._pending.pop(action_id, None)
-        if pending is None or pending.device_id != device_id:
-            raise KeyError(action_id)
+            pending = self._pending.get(action_id)
+            # Najpierw sprawdzamy telefon — próba z innego telefonu nie może zużyć cudzej zgody.
+            if pending is None or pending.device_id != device_id:
+                raise KeyError(action_id)
+            del self._pending[action_id]
         msgs = pending.messages
         if approve:
             result = await self._execute(pending.tool, pending.arguments, device_id)
