@@ -1,0 +1,29 @@
+# Katalog zatwierdzonych modeli. Źródło: Hugging Face / biblioteka Ollamy.
+# role: router | main | code | alt
+# Przed wydaniem: przypiąć wersję (hash commita) i sumę kontrolną każdego pliku.
+
+models:
+  - id: qwen3.5:0.8b
+    role: router
+    source: ollama-library
+    license: Apache-2.0
+    notes: Router i proste czynności; poniżej 2 GB przy 4 bitach.
+
+  - id: qwen3.5:4b
+    role: main
+    source: ollama-library
+    license: Apache-2.0
+    notes: Model główny, polski i angielski, rozumie obrazy; ok. 3 GB przy 4 bitach.
+
+  - id: hf.co/speakleash/Bielik-4.5B-v3.0-Instruct-GGUF:Q8_0
+    role: alt
+    source: huggingface
+    license: Apache-2.0
+    notes: Specjalizowany w polskim; preinstalowany, włączany w ustawieniach.
+
+  - id: granite4.2:8b
+    role: code
+    source: ollama-library
+    license: Apache-2.0
+    optional: true
+    notes: Model kodu na fazę 5; ok. 5,3 GB. Pobierany tylko na urządzeniach z 16+ GB.

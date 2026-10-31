@@ -1,0 +1,23 @@
+[Unit]
+Description=edge-llm API server (router LangGraph + Ollama)
+After=network-online.target ollama.service
+Wants=network-online.target
+Requires=ollama.service
+
+[Service]
+User=edge
+Group=edge
+EnvironmentFile=/etc/edge-llm.env
+WorkingDirectory=/opt/edge-llm/server
+ExecStart=/opt/edge-llm/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8080
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# Katalog na historię rozmów (SQLite) i stan zadań LangGraph: /var/lib/edge-llm
+StateDirectory=edge-llm
+
+[Install]
+WantedBy=multi-user.target

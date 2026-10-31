@@ -1,0 +1,16 @@
+# Decyzje architektoniczne
+
+Krótki rejestr decyzji. Szczegóły i uzasadnienia: dokument projektowy
+https://claude.ai/artifact/WgErVzXtiF86DtRptPqoMX
+
+| Data | Decyzja | Uzasadnienie |
+| --- | --- | --- |
+| 2026-10-31 | Modele z Hugging Face (GGUF), bez trenowania własnych | Szybki start, licencje Apache 2.0 |
+| 2026-10-31 | Jeden model dwujęzyczny: Qwen3.5-4B | Prostsze utrzymanie; Bielik jako alternatywa w ustawieniach |
+| 2026-10-31 | Wybór języka PL/EN przy pierwszym uruchomieniu | Ustawia język aplikacji i odpowiedzi modelu |
+| 2026-10-31 | LangGraph jako rdzeń orkiestracji | Graf stanów, checkpointy w SQLite, MCP, Python |
+| 2026-10-31 | Router w MVP: reguły + Qwen3.5-0.8B | Prosty i przewidywalny; NeMo Switchyard do testów w fazie 5 |
+| 2026-10-31 | Bez bramy LLM (LiteLLM, Portkey) | Jeden backend na urządzeniu — Ollama |
+| 2026-10-31 | Narzędzia przez MCP | Niezależność od frameworka agentowego |
+| 2026-10-31 | Tailscale na start | Najszybsze wdrożenie; potem własny relay z E2E |
+| 2026-10-31 | Do zbadania: mini PC x86 (Ryzen 7, 32 GB) zamiast Jetsona | 1,5–4× taniej, 2× więcej pamięci |

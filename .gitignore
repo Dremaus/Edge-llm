@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env
+*.db
+*.gguf
+models/
+# Flutter
+mobile/**/build/
+mobile/**/.dart_tool/
+.DS_Store
