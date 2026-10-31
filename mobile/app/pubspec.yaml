@@ -1,0 +1,24 @@
+name: edge_llm_app
+description: Aplikacja do prywatnego asystenta AI działającego na urządzeniu w domu.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  # Token i adres urządzenia w Android Keystore / iOS Keychain.
+  flutter_secure_storage: ^9.2.2
+  # Skanowanie kodu QR parowania.
+  mobile_scanner: ^5.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

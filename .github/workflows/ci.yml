@@ -43,6 +43,22 @@ jobs:
       # Statyczna analiza bezpieczeństwa kodu Pythona.
       - run: bandit -r app -ll
 
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile/app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
   shell-lint:
     runs-on: ubuntu-latest
     steps:
