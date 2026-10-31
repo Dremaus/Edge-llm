@@ -22,7 +22,7 @@ jobs:
           python-version: "3.12"
       - run: pip install pip-tools
       - run: pip-compile --generate-hashes --strip-extras --output-file server/requirements.lock server/pyproject.toml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: requirements-lock
           path: server/requirements.lock
