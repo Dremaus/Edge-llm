@@ -110,6 +110,13 @@ class EdgeApi {
 
   Future<List<dynamic>> devices() async => (await _json('GET', '/v1/devices'))['data'] as List<dynamic>;
 
+  /// Zadanie z narzędziami. Wynik: status `done` z `content` albo `needs_confirmation` z `action`.
+  Future<Map<String, dynamic>> agent(List<Map<String, dynamic>> messages) =>
+      _json('POST', '/v1/agent', {'messages': messages});
+
+  Future<Map<String, dynamic>> confirmAction(String id, bool approve) =>
+      _json('POST', '/v1/agent/actions/${Uri.encodeComponent(id)}', {'approve': approve});
+
   /// Wylogowanie: unieważnia token tego telefonu na urządzeniu.
   Future<void> unpairSelf() => _json('DELETE', '/v1/devices/me');
 

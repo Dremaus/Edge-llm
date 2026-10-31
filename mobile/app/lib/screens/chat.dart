@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -37,6 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<dynamic> _conversations = const [];
   String? _conversationId;
   bool _sending = false;
+  bool _toolsMode = false;
 
   S get s => S(widget.lang);
 
@@ -108,8 +111,52 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Tryb narzędzi: bez strumieniowania; akcje zmieniające dane wymagają zgody użytkownika.
+  Future<void> _sendWithTools(String text) async {
+    _input.clear();
+    setState(() {
+      _sending = true;
+      _messages.add({'role': 'user', 'content': text});
+    });
+    final history = [for (final m in _messages) {'role': m['role'], 'content': displayText(m['content'])}];
+    try {
+      var result = await widget.api.agent(history);
+      while (result['status'] == 'needs_confirmation' && mounted) {
+        final action = result['action'] as Map<String, dynamic>;
+        final approve = await showDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                title: Text(s.t('confirm_title')),
+                content: SelectableText('${action['tool']}\n\n${const JsonEncoder.withIndent('  ').convert(action['arguments'])}'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.t('reject'))),
+                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.t('approve'))),
+                ],
+              ),
+            ) ??
+            false;
+        result = await widget.api.confirmAction(action['id'] as String, approve);
+      }
+      setState(() => _messages.add({'role': 'assistant', 'content': '${result['content'] ?? ''}'}));
+    } on ApiException catch (e) {
+      if (e.unauthorized) {
+        widget.onUnpaired();
+        return;
+      }
+      _showError(e.tooManyRequests ? s.t('too_many') : s.t('error'));
+    } catch (_) {
+      _showError(s.t('offline'));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
   Future<void> _send() async {
     final text = _input.text.trim();
+    if (_toolsMode && text.isNotEmpty && _pendingImages.isEmpty && !_sending) {
+      return _sendWithTools(text);
+    }
     if ((text.isEmpty && _pendingImages.isEmpty) || _sending) return;
     final content = buildContent(text, List.of(_pendingImages));
     _input.clear();
@@ -166,6 +213,13 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text(s.t('chat_title')),
         actions: [
+          IconButton(
+            tooltip: s.t('tools_mode'),
+            isSelected: _toolsMode,
+            icon: const Icon(Icons.handyman_outlined),
+            selectedIcon: const Icon(Icons.handyman),
+            onPressed: () => setState(() => _toolsMode = !_toolsMode),
+          ),
           IconButton(
             tooltip: s.t('status'),
             icon: const Icon(Icons.monitor_heart_outlined),

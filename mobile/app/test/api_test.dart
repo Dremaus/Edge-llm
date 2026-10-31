@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:edge_llm_app/api.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -31,5 +35,18 @@ void main() {
       ...p.feed('ces":[{"delta":{"content":"ść"}}]}\n\ndata: [DONE]\n\n'),
     ];
     expect(out.join(), 'Cześć');
+  });
+
+  test('agent confirmation posts approve flag to the action URL', () async {
+    late http.Request seen;
+    final api = EdgeApi(Uri.parse('https://edge.example.ts.net'), 'tok', client: MockClient((req) async {
+      seen = req;
+      return http.Response(jsonEncode({'status': 'done', 'content': 'ok', 'steps': []}), 200);
+    }));
+    final out = await api.confirmAction('a/b', true);
+    expect(out['content'], 'ok');
+    expect(seen.url.path, '/v1/agent/actions/a%2Fb');
+    expect(jsonDecode(seen.body), {'approve': true});
+    expect(seen.headers['Authorization'], 'Bearer tok');
   });
 }

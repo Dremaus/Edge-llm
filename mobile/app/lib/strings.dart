@@ -43,6 +43,10 @@ class S {
     'disk': 'Dysk wolny',
     'models_loaded': 'Załadowane modele',
     'hot': 'Urządzenie jest gorące — sprawdź wentylację',
+    'tools_mode': 'Tryb narzędzi (notatki, kalkulator)',
+    'confirm_title': 'Asystent chce wykonać akcję',
+    'approve': 'Zgadzam się',
+    'reject': 'Odmów',
   };
 
   static const _en = {
@@ -85,6 +89,10 @@ class S {
     'disk': 'Free disk',
     'models_loaded': 'Loaded models',
     'hot': 'The device is hot — check ventilation',
+    'tools_mode': 'Tools mode (notes, calculator)',
+    'confirm_title': 'The assistant wants to perform an action',
+    'approve': 'Allow',
+    'reject': 'Deny',
   };
 
   String t(String key) => (lang == 'pl' ? _pl : _en)[key] ?? key;
