@@ -228,3 +228,16 @@ def test_status_endpoint_requires_auth_and_reports_numbers():
     body = client.get("/v1/status", headers=headers).json()
     assert body["status"] == "ok"
     assert "memory" in body and "temperature_c" in body
+
+
+def test_devices_list_and_self_unpair():
+    client, _, headers, store = make_client()
+    other_record, other_token = store.create("Tablet")
+    devices = client.get("/v1/devices", headers=headers).json()["data"]
+    assert {d["name"] for d in devices} == {"test", "Tablet"}
+    assert sum(d["current"] for d in devices) == 1
+    assert all("sha256" not in d for d in devices)
+    assert client.delete("/v1/devices/me", headers=headers).status_code == 200
+    assert client.get("/v1/devices", headers=headers).status_code == 401
+    # Drugi telefon nadal działa.
+    assert client.get("/v1/devices", headers={"Authorization": f"Bearer {other_token}"}).status_code == 200

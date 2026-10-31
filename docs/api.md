@@ -10,6 +10,8 @@ Wszystkie endpointy poza `/health` i `/v1/pair` wymagają nagłówka `Authorizat
 | GET | `/v1/models` | Dozwolone modele (`auto` + katalog) |
 | POST | `/v1/chat/completions` | Czat w formacie OpenAI, z routerem i strumieniowaniem |
 | GET / PATCH | `/v1/settings` | Język, model rozmów, stan kreatora |
+| GET | `/v1/devices` | Sparowane telefony (bez tokenów); `current` = ten telefon |
+| DELETE | `/v1/devices/me` | Wylogowanie: telefon unieważnia własny token |
 | GET | `/v1/status` | Temperatura, pamięć, dysk, załadowane modele |
 | GET | `/v1/conversations` | Lista rozmów tego telefonu |
 | GET / DELETE | `/v1/conversations/{id}` | Jedna rozmowa / usunięcie |

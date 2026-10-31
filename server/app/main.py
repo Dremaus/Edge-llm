@@ -221,6 +221,31 @@ def create_app(
             headers=headers,
         )
 
+    # --- sparowane telefony --------------------------------------------
+    @app.get("/v1/devices")
+    async def list_devices(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        """Lista sparowanych telefonów (bez skrótów tokenów)."""
+        return {
+            "data": [
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "created": d.created,
+                    "revoked": d.revoked,
+                    "current": d.id == device.id,
+                }
+                for d in tokens.list()
+            ]
+        }
+
+    @app.delete("/v1/devices/me")
+    async def unpair_self(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        """Wylogowanie: telefon unieważnia własny token. Inne telefony unieważnia się
+        tylko w konsoli urządzenia — skradziony telefon nie może odciąć właściciela."""
+        tokens.revoke(device.id)
+        log.info("device unpaired itself device=%s", device.id)
+        return {"revoked": device.id}
+
     # --- stan urządzenia -----------------------------------------------
     @app.get("/v1/status")
     async def device_status(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
