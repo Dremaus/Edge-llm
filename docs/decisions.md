@@ -18,5 +18,4 @@ https://claude.ai/artifact/WgErVzXtiF86DtRptPqoMX
 | 2026-10-31 | ~~Do zbadania: mini PC x86 (Ryzen 7, 32 GB) zamiast Jetsona~~ | Rozstrzygnięte niżej |
 | 2026-10-31 | **Platforma: mini PC z AMD Ryzen AI** zamiast Jetsona | Taniej przy 16–32 GB pamięci; x86 + Ubuntu 24.04; TPM i Secure Boot do szyfrowania dysku; NPU na później. Szczegóły: docs/hardware.md |
 | 2026-10-31 | Ollama na Radeonie przez Vulkan, nie ROCm | ~2× szybsze generowanie w pomiarach; działa na wszystkich Ryzen AI |
-
-| 5.11.2026 | Skład modeli według RAM (kandydaci) | 32 GB: Gemma 4 26B-A4B (HauhauCS) + Ornith-1.5-35B-A3B (kod, na żądanie); 16 GB: Gemma-4-E4B + Ornith-1.5-9B; router Qwen3.5-0.8B; Bielik zawsze. Wszystko ze statusem `candidate` do tygodnia testów (licencja Gemma, polski, narzędzia, odporność na złośliwy dokument). Odrzucone: modele „Claude/Fable distill" (warunki Anthropic), gęste 27–33B (ok. 5 tok/s), 100B+. |
+| 2026-11-05 | Skład modeli według RAM (kandydaci) | 32 GB: Gemma 4 26B-A4B (HauhauCS) + Ornith-1.5-35B-A3B (kod, na żądanie); 16 GB: Gemma-4-E4B + Ornith-1.5-9B; router Qwen3.5-0.8B; Bielik zawsze. Wszystko ze statusem `candidate` do tygodnia testów (licencja Gemma, polski, narzędzia, odporność na złośliwy dokument). Odrzucone: modele „Claude/Fable distill" (warunki Anthropic), gęste 27–33B (ok. 5 tok/s), 100B+. |
