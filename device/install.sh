@@ -2,11 +2,12 @@
 # Instalacja asystenta na urządzeniu.
 # Platforma docelowa: mini PC z AMD Ryzen AI (Radeon 860M/880M/890M), Ubuntu 24.04, kernel 6.14+.
 #
-# Użycie: sudo device/install.sh [--with-code-model|--no-code-model] [--harden-ssh] [--no-performance] [--keep-ollama-online]
+# Użycie: sudo device/install.sh [--with-code-model|--no-code-model] [--harden-ssh] [--no-performance] [--keep-ollama-online] [--no-voice]
 #   --with-code-model  wymusza pobranie modelu kodu (domyślnie: tylko przy 24+ GB RAM)
 #   --no-code-model    pomija model kodu niezależnie od pamięci
 #   --harden-ssh       wyłącza logowanie hasłem i roota przez SSH (wymaga klucza w authorized_keys)
 #   --no-performance   nie przełącza profilu zasilania na wydajność
+#   --no-voice         pomija rozpoznawanie mowy (whisper.cpp z Vulkanem, model ok. 0,6 GB)
 #   --keep-ollama-online  nie blokuje internetu Ollamy po pobraniu modeli (domyślnie blokuje;
 #                      aktualizacja modeli: sudo device/pull-models.sh)
 set -euo pipefail
@@ -20,6 +21,10 @@ WITH_CODE_MODEL=auto
 HARDEN_SSH=0
 PERFORMANCE=1
 OLLAMA_OFFLINE=1
+WITH_VOICE=1
+WHISPER_REF=v1.9.5
+WHISPER_COMMIT=d2a764c648779feb36d44363f212a29b00aad1af
+WHISPER_MODEL=ggml-large-v3-turbo-q5_0.bin
 for arg in "$@"; do
   case "$arg" in
     --with-code-model) WITH_CODE_MODEL=1 ;;
@@ -27,6 +32,7 @@ for arg in "$@"; do
     --harden-ssh) HARDEN_SSH=1 ;;
     --no-performance) PERFORMANCE=0 ;;
     --keep-ollama-online) OLLAMA_OFFLINE=0 ;;
+    --no-voice) WITH_VOICE=0 ;;
     *) echo "Nieznana opcja: $arg" >&2; exit 2 ;;
   esac
 done
@@ -130,6 +136,32 @@ if (( OLLAMA_OFFLINE )); then
   echo "==> Ollama bez dostępu do internetu (blokada w systemd)"
 fi
 
+if (( WITH_VOICE )); then
+  echo "==> Rozpoznawanie mowy (whisper.cpp ${WHISPER_REF}, Vulkan)"
+  apt-get install -y -q git cmake build-essential libvulkan-dev glslc ffmpeg
+  if [[ ! -x /opt/whisper.cpp/build/bin/whisper-server ]]; then
+    rm -rf /opt/whisper.cpp
+    git clone -q --depth 1 --branch "$WHISPER_REF" https://github.com/ggml-org/whisper.cpp.git /opt/whisper.cpp
+    got=$(git -C /opt/whisper.cpp rev-parse HEAD)
+    if [[ $got != "$WHISPER_COMMIT" ]]; then
+      echo "BŁĄD: commit whisper.cpp $got różni się od przypiętego $WHISPER_COMMIT" >&2
+      exit 1
+    fi
+    cmake -S /opt/whisper.cpp -B /opt/whisper.cpp/build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release >/dev/null
+    cmake --build /opt/whisper.cpp/build -j "$(nproc)" --target whisper-server
+  fi
+  id -u whisper >/dev/null 2>&1 || useradd --system --home /var/lib/whisper --shell /usr/sbin/nologin whisper
+  install -d -m 750 -o whisper -g whisper /var/lib/whisper
+  if [[ ! -f /var/lib/whisper/$WHISPER_MODEL ]]; then
+    curl -fsSL "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$WHISPER_MODEL" -o "/var/lib/whisper/$WHISPER_MODEL"
+    chown whisper:whisper "/var/lib/whisper/$WHISPER_MODEL"
+  fi
+  echo "    sha256 modelu: $(sha256sum "/var/lib/whisper/$WHISPER_MODEL" | cut -d' ' -f1)  (do przypięcia w repozytorium)"
+  install -m 644 "$REPO_DIR/device/systemd/whisper.service" /etc/systemd/system/whisper.service
+  systemctl daemon-reload
+  systemctl enable --now whisper
+fi
+
 echo "==> Serwer API"
 id -u "$SERVICE_USER" >/dev/null 2>&1 || useradd --system --home "$INSTALL_DIR" --shell /usr/sbin/nologin "$SERVICE_USER"
 install -d -m 750 -o root -g "$SERVICE_USER" "$INSTALL_DIR"
@@ -157,6 +189,7 @@ fi
 # Modele wybrane według RAM (nadpisywane przy każdej instalacji).
 set_env() { grep -v "^$1=" "$ENV_FILE" > "$ENV_FILE.tmp" || true; echo "$1=$2" >> "$ENV_FILE.tmp"; cat "$ENV_FILE.tmp" > "$ENV_FILE"; rm -f "$ENV_FILE.tmp"; }
 set_env EDGE_CODE_MODEL_ENABLED "$WITH_CODE_MODEL"
+set_env EDGE_STT_ENABLED "$WITH_VOICE"
 [[ -n $CHOSEN_MAIN ]] && set_env EDGE_MAIN_MODEL "$CHOSEN_MAIN"
 [[ -n $CHOSEN_CODE && $WITH_CODE_MODEL -eq 1 ]] && set_env EDGE_CODE_MODEL "$CHOSEN_CODE"
 

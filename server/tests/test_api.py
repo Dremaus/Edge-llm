@@ -308,3 +308,44 @@ def test_files_upload_list_delete_isolated(tmp_path):
     assert client.get("/v1/files", headers=h2).json()["data"] == []
     assert client.delete("/v1/files/notatki.txt", headers=h2).status_code == 404
     assert client.delete("/v1/files/notatki.txt", headers=h1).status_code == 200
+
+
+class FakeStt:
+    def __init__(self, text="cześć świecie", fail=False):
+        self.text, self.fail, self.calls = text, fail, []
+
+    async def transcribe(self, audio, filename, language):
+        from app.stt import SttError
+
+        self.calls.append((len(audio), language))
+        if self.fail:
+            raise SttError("Usługa rozpoznawania mowy jest niedostępna")
+        return self.text
+
+
+def make_stt_client(stt):
+    tokens = TokenStore()
+    _, t = tokens.create("a")
+    app = create_app(Settings(main_model="main"), FakeLLM(), tokens, PairingManager(tokens), Storage(), stt=stt)
+    return TestClient(app), {"Authorization": f"Bearer {t}"}
+
+
+def test_transcription_returns_text_and_uses_device_language():
+    stt = FakeStt()
+    client, h = make_stt_client(stt)
+    r = client.post("/v1/audio/transcriptions", headers=h, content=b"RIFFxxxx")
+    assert r.status_code == 200 and r.json() == {"text": "cześć świecie"}
+    assert stt.calls == [(8, "pl")]
+
+
+def test_transcription_disabled_empty_and_upstream_error():
+    tokens = TokenStore()
+    _, t = tokens.create("a")
+    h = {"Authorization": f"Bearer {t}"}
+    off = TestClient(create_app(Settings(main_model="main"), FakeLLM(), tokens, PairingManager(tokens), Storage()))
+    assert off.post("/v1/audio/transcriptions", headers=h, content=b"x").status_code == 503
+    client, h2 = make_stt_client(FakeStt())
+    assert client.post("/v1/audio/transcriptions", headers=h2, content=b"").status_code == 400
+    bad, h3 = make_stt_client(FakeStt(fail=True))
+    assert bad.post("/v1/audio/transcriptions", headers=h3, content=b"x").status_code == 502
+    assert client.post("/v1/audio/transcriptions").status_code == 401

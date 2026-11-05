@@ -27,6 +27,7 @@ from .files import FileError, FileStore
 from .config import SYSTEM_PROMPTS, Settings, get_settings
 from .llm import LLMClient, OllamaClient
 from .router import ModelRouter
+from .stt import MAX_AUDIO_BYTES, SttError, Transcriber, WhisperClient
 from .security.pairing import PairingError, PairingManager
 from .security.ratelimit import FailureLockout, TokenBucket
 from .security.tokens import DeviceToken, TokenStore
@@ -55,6 +56,7 @@ def create_app(
     tokens: TokenStore | None = None,
     pairing: PairingManager | None = None,
     store: Storage | None = None,
+    stt: Transcriber | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     llm = llm or OllamaClient(settings.ollama_url, settings.request_timeout_s)
@@ -63,6 +65,7 @@ def create_app(
     store = store if store is not None else Storage(settings.db_file, settings.language)
     router = ModelRouter(settings, llm)
     file_store = FileStore(settings.files_dir)
+    stt = stt or (WhisperClient(settings.whisper_url) if settings.stt_enabled else None)
     # Agent: tylko narzędzia lokalne; sieć i uruchamianie kodu wyłączone (brak wykonawców).
     agent = AgentRunner(llm, ToolPolicy(SPECS, PolicyConfig()), build_registry(store, file_store))  # type: ignore[arg-type]
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
@@ -350,6 +353,23 @@ def create_app(
         if not store.delete_note(device.id, note_id):
             raise HTTPException(404, "Nie znaleziono wpisu")
         return {"deleted": note_id}
+
+    # --- mowa na tekst -------------------------------------------------
+    @app.post("/v1/audio/transcriptions")
+    async def transcribe(request: Request, device: DeviceToken = Depends(require_device)):
+        """Surowe bajty nagrania (wav/m4a/ogg/mp3) -> {"text": ...}. Tekst trafia do czatu po stronie aplikacji."""
+        if stt is None:
+            raise HTTPException(503, "Rozpoznawanie mowy jest wyłączone na tym urządzeniu")
+        audio = await request.body()
+        if not audio or len(audio) > MAX_AUDIO_BYTES:
+            raise HTTPException(400, "Nagranie jest puste albo za duże")
+        language = store.get_settings().language
+        try:
+            text = await stt.transcribe(audio, "audio", language)
+        except SttError as exc:
+            raise HTTPException(502, str(exc)) from None
+        log.info("stt device=%s bytes=%d chars=%d", device.id, len(audio), len(text))
+        return JSONResponse({"text": text}, headers=SECURITY_HEADERS)
 
     # --- pliki użytkownika (dla narzędzi agenta) ---------------------------
     @app.get("/v1/files")

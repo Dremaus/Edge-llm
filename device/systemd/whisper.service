@@ -1,0 +1,30 @@
+[Unit]
+Description=Edge-LLM: rozpoznawanie mowy (whisper.cpp)
+After=network.target
+
+[Service]
+User=whisper
+Group=whisper
+SupplementaryGroups=render video
+ExecStart=/opt/whisper.cpp/build/bin/whisper-server -m /var/lib/whisper/ggml-large-v3-turbo-q5_0.bin --host 127.0.0.1 --port 8081 --convert -t 4
+Restart=on-failure
+RestartSec=5
+# Nasłuchuje tylko na localhost i nie ma dostępu do internetu.
+IPAddressDeny=any
+IPAddressAllow=localhost
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=false
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryMax=3G
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

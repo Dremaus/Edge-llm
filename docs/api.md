@@ -23,6 +23,7 @@ Wszystkie endpointy poza `/health` i `/v1/pair` wymagają nagłówka `Authorizat
 | GET | `/v1/files` | Pliki tego telefonu dla narzędzi agenta |
 | POST | `/v1/files?name=…` | Wysłanie pliku (surowe bajty, do 20 MB; limit 500 plików i 300 MB). Odpowiedź: `{"name": …}` — serwer może dopisać „(2)” przy powtórzonej nazwie |
 | DELETE | `/v1/files/{name}` | Usunięcie pliku |
+| POST | `/v1/audio/transcriptions` | Mowa na tekst: surowe bajty nagrania (do 25 MB) -> `{"text": …}`; język z ustawień urządzenia; 503, gdy mowa wyłączona |
 
 ## Parowanie
 

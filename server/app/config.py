@@ -20,6 +20,9 @@ class Settings:
     db_file: str = field(default_factory=lambda: _env("EDGE_DB_FILE", "/var/lib/edge-llm/edge.db"))
     # Pliki użytkownika dla agenta (osobny katalog na telefon).
     files_dir: str = field(default_factory=lambda: _env("EDGE_FILES_DIR", "/var/lib/edge-llm/files"))
+    # Rozpoznawanie mowy (whisper.cpp na localhost); włączane przez instalator.
+    stt_enabled: bool = field(default_factory=lambda: _env("EDGE_STT_ENABLED", "0") == "1")
+    whisper_url: str = field(default_factory=lambda: _env("EDGE_WHISPER_URL", "http://127.0.0.1:8081"))
     # Jednorazowe kody parowania (patrz app/security/pairing.py).
     pairing_file: str = field(
         default_factory=lambda: _env("EDGE_PAIRING_FILE", "/var/lib/edge-llm/pairing.json")
