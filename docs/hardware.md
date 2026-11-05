@@ -35,13 +35,13 @@ na tę domenę (sprawdzone 31.10.2026). Mimo to płacić z ochroną kupującego 
 | UM870 Slim | Ryzen 7 8745H (Radeon 780M, DDR5-5600, bez NPU) | barebone | 329 € |
 | UM870 Slim | Ryzen 7 8745H | 32 GB + 1 TB | 839 € (wysyłka z Hongkongu) |
 | UM890 Pro | Ryzen 9 8945HS (Radeon 780M, NPU XDNA1 — bez wsparcia LLM pod Linuksem) | 64 GB + 1 TB | 1429 € |
+| AI X1 Pro-470 | Ryzen AI 9 HX 470 (12 rdzeni, NPU) | barebone | 729 € |
+| AI X1 Pro-470 | Ryzen AI 9 HX 470 | 32 GB + 1 TB | 1249 € |
+| AI X1 Pro-470 | Ryzen AI 9 HX 470 | 64 GB + 1 TB | 1679 € |
 
 Najlepszy stosunek ceny do wydajności na test: **UM870 Slim 32 GB + 1 TB (839 €)** — ta sama klasa co
 Ryzen 7 H 255 (Radeon 780M, DDR5-5600), taniej niż X1 Mini. UM773 Lite jest najtańszy, ale wolniejsza
 pamięć (DDR5-4800) to ok. 15% wolniejsze generowanie.
-| AI X1 Pro-470 | Ryzen AI 9 HX 470 (12 rdzeni, NPU) | barebone | 729 € |
-| AI X1 Pro-470 | Ryzen AI 9 HX 470 | 32 GB + 1 TB | 1249 € |
-| AI X1 Pro-470 | Ryzen AI 9 HX 470 | 64 GB + 1 TB | 1679 € |
 
 Wariant „Lite” = H 255 (ta sama pamięć DDR5-5600, więc podobna prędkość generowania; wolniejsze
 przetwarzanie długich promptów i zdjęć, brak NPU). Wariant „Pro” = HX 470.
