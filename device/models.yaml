@@ -1,29 +1,75 @@
 # Katalog zatwierdzonych modeli. Źródło: Hugging Face / biblioteka Ollamy.
 # role: router | main | code | alt
+# status: approved  — instalator pobiera model
+#         candidate — czeka na tydzień testów (eval/, tools/bench.py); instalator pomija
+# min_ram_gb / max_ram_gb (opcjonalne) — zakres pamięci RAM (wartość z `free -g`, 32 GB pokazuje 30),
+#   w którym model jest pobierany; bez nich model jest pobierany zawsze.
 # Przed wydaniem: przypiąć wersję (hash commita) i sumę kontrolną każdego pliku.
 
 models:
   - id: qwen3.5:0.8b
     role: router
+    status: approved
     source: ollama-library
     license: Apache-2.0
     notes: Router i proste czynności; poniżej 2 GB przy 4 bitach.
 
   - id: qwen3.5:4b
     role: main
+    status: approved
     source: ollama-library
     license: Apache-2.0
-    notes: Model główny, polski i angielski, rozumie obrazy; ok. 3 GB przy 4 bitach.
+    notes: Model główny (do czasu zatwierdzenia kandydatów poniżej); polski i angielski, rozumie obrazy; ok. 3 GB przy 4 bitach.
 
   - id: hf.co/speakleash/Bielik-4.5B-v3.0-Instruct-GGUF:Q8_0
     role: alt
+    status: approved
     source: huggingface
     license: Apache-2.0
     notes: Specjalizowany w polskim; preinstalowany, włączany w ustawieniach.
 
   - id: granite4.2:8b
     role: code
+    status: approved
+    min_ram_gb: 24
     source: ollama-library
     license: Apache-2.0
-    optional: true
-    notes: Model kodu; ok. 5,3 GB. Pobierany automatycznie przy 24+ GB RAM (grafika dzieli pamięć z systemem).
+    notes: Model kodu (tymczasowy, do zastąpienia przez Ornith po testach); ok. 5,3 GB.
+
+# --- Kandydaci (decyzja 5.11.2026, do sprawdzenia w tygodniu testów) ---
+# Dla każdego: licencja według karty modelu (nie zweryfikowana), jakość po polsku (eval/),
+# wywoływanie narzędzi, odporność na złośliwy dokument. Nazwy repozytoriów HF do potwierdzenia
+# przed zmianą statusu na approved. Modele "uncensored" nie odmawiają, więc całą ochronę
+# zapewnia serwer (polityka ALLOW/CONFIRM/DENY, potwierdzenia, piaskownica).
+
+  - id: hf.co/HauhauCS/Gemma4-26B-A4B-QAT-Uncensored-HauhauCS-Balanced-MTP
+    role: main
+    status: candidate
+    min_ram_gb: 24
+    source: huggingface
+    license: Gemma (do sprawdzenia względem Apache-2.0)
+    notes: Główny przy 32 GB; MoE (4 mld aktywnych), Q4_K_M ok. 16,8 GB + mmproj 1,2 GB (obrazy).
+
+  - id: ornith-1.5-35b-a3b-uncensored
+    role: code
+    status: candidate
+    min_ram_gb: 24
+    source: huggingface
+    license: MIT
+    notes: Kod, ładowany na żądanie. Wyniki SWE-Bench/Terminal-Bench to deklaracje autora. Zapasowe - GLM-4.7-Flash (MIT), gpt-oss-20b.
+
+  - id: hauhaucs-gemma-4-e4b
+    role: main
+    status: candidate
+    max_ram_gb: 23
+    source: huggingface
+    license: Gemma (do sprawdzenia)
+    notes: Główny przy 16 GB, w parze z Ornith-1.5-9B (kod).
+
+  - id: ornith-1.5-9b
+    role: code
+    status: candidate
+    max_ram_gb: 23
+    source: huggingface
+    license: MIT
+    notes: Kod przy 16 GB.

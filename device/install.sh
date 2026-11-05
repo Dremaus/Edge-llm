@@ -105,21 +105,34 @@ systemctl enable ollama
 systemctl restart ollama
 
 echo "==> Pobieranie modeli z device/models.yaml"
-current_id=""
+pull_model() {
+  local id=$1 role=$2 status=$3 min=$4 max=$5
+  [[ -z $id ]] && return
+  if [[ $status != approved ]]; then
+    echo "    pomijam (status: ${status:-brak}): $id"
+  elif [[ $role == code && $WITH_CODE_MODEL -eq 0 ]]; then
+    echo "    pomijam model kodu: $id (mniej niż 24 GB RAM; wymuś: --with-code-model)"
+  elif [[ -n $min ]] && (( RAM_GB < min )) && ! [[ $role == code && $WITH_CODE_MODEL -eq 1 ]]; then
+    echo "    pomijam (wymaga ${min}+ GB RAM): $id"
+  elif [[ -n $max ]] && (( RAM_GB > max )); then
+    echo "    pomijam (przeznaczony dla ${max} GB RAM lub mniej): $id"
+  else
+    echo "    ollama pull $id"
+    ollama pull "$id"
+  fi
+}
+m_id="" m_role="" m_status="" m_min="" m_max=""
 while IFS= read -r line; do
   if [[ $line =~ ^[[:space:]]*-[[:space:]]id:[[:space:]]*(.+)$ ]]; then
-    current_id="${BASH_REMATCH[1]}"
-  elif [[ $line =~ ^[[:space:]]*role:[[:space:]]*(.+)$ && -n $current_id ]]; then
-    role="${BASH_REMATCH[1]}"
-    if [[ $role == "code" && $WITH_CODE_MODEL -eq 0 ]]; then
-      echo "    pomijam model kodu: $current_id (mniej niż 24 GB RAM; wymuś: --with-code-model)"
-    else
-      echo "    ollama pull $current_id"
-      ollama pull "$current_id"
-    fi
-    current_id=""
+    pull_model "$m_id" "$m_role" "$m_status" "$m_min" "$m_max"
+    m_id="${BASH_REMATCH[1]}" m_role="" m_status="" m_min="" m_max=""
+  elif [[ $line =~ ^[[:space:]]+role:[[:space:]]*([a-z]+) ]]; then m_role="${BASH_REMATCH[1]}"
+  elif [[ $line =~ ^[[:space:]]+status:[[:space:]]*([a-z]+) ]]; then m_status="${BASH_REMATCH[1]}"
+  elif [[ $line =~ ^[[:space:]]+min_ram_gb:[[:space:]]*([0-9]+) ]]; then m_min="${BASH_REMATCH[1]}"
+  elif [[ $line =~ ^[[:space:]]+max_ram_gb:[[:space:]]*([0-9]+) ]]; then m_max="${BASH_REMATCH[1]}"
   fi
 done < "$REPO_DIR/device/models.yaml"
+pull_model "$m_id" "$m_role" "$m_status" "$m_min" "$m_max"
 
 echo "==> Serwer API"
 id -u "$SERVICE_USER" >/dev/null 2>&1 || useradd --system --home "$INSTALL_DIR" --shell /usr/sbin/nologin "$SERVICE_USER"
