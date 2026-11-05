@@ -30,7 +30,9 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [ ] Klasyfikator routera, ewentualnie dostrojony LoRA
 - [ ] Generowanie aplikacji krok po kroku z testem po każdym kroku
 - [ ] Kontrola wygenerowanych stron w przeglądarce bez okna: kontrast, fokus, układ na telefonie (pomysł z `hallmark`)
-- [ ] Tryb prostych odpowiedzi w ustawieniach aplikacji: krótko i uporządkowanie (pomysł z `i-have-adhd`)
+- [ ] Styl odpowiedzi w ustawieniach: normalny / krótki / prosty (pomysły z `i-have-adhd` i `caveman`). Krótki styl skraca też czas generowania na wolnym sprzęcie; sprawdzić utratę jakości oceną sędziego
+- [ ] Wyszukiwanie w historii rozmów (FTS5), jak w `hermes-agent`
+- [ ] Zadania cykliczne w języku naturalnym (np. dzienny raport) z zatwierdzeniem harmonogramu przez użytkownika; powiadomienia na telefon (pomysł z `hermes-agent`)
 - [ ] Strojenie promptów routera i reguł agenta na zbiorze `eval/` z bramką walidacji; wynik jako PR do przeglądu, nigdy samoistna zmiana (pomysł z Microsoft SkillOpt)
 
 ## 3. Sprzęt i testy (po stronie właściciela)
@@ -59,4 +61,4 @@ Frameworki LangChain, AutoGPT, CrewAI i Dify, vLLM, ComfyUI, kontenery Docker z 
 modele z licencją badawczą (Arch-Router, Nemotron-Orchestrator), redakcja PDF przez pymupdf (AGPL),
 modele „Claude/Fable distill", repozytoria z samoaktualizacją i zdalnymi ogłoszeniami (`dsh-our-free-model`),
 agregatory darmowych API chmurowych (`freellmapi`), agent z dostępem do prawdziwego, zalogowanego Chrome (`browser-harness`),
-zestaw ofensywny `reverse-skill`, narzędzia do usuwania znaczników pochodzenia AI, `gpu-unlock` (NVIDIA).
+zestaw ofensywny `reverse-skill`, wycieki promptów komercyjnych narzędzi (`system-prompts-and-models-of-ai-tools`, GPL), agenci z autonomicznym tworzeniem własnych umiejętności (`hermes-agent`), asystent z kanałami komunikatorów i instalatorem `curl | bash` (`openclaw`), Supabase, narzędzia do usuwania znaczników pochodzenia AI, `gpu-unlock` (NVIDIA).
