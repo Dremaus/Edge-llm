@@ -29,6 +29,9 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [ ] Lokalny RAG na własnych dokumentach: osadzenia EmbeddingGemma lub nomic-embed-text, router 0,8B filtruje fragmenty
 - [ ] Klasyfikator routera, ewentualnie dostrojony LoRA
 - [ ] Generowanie aplikacji krok po kroku z testem po każdym kroku
+- [ ] Kontrola wygenerowanych stron w przeglądarce bez okna: kontrast, fokus, układ na telefonie (pomysł z `hallmark`)
+- [ ] Tryb prostych odpowiedzi w ustawieniach aplikacji: krótko i uporządkowanie (pomysł z `i-have-adhd`)
+- [ ] Strojenie promptów routera i reguł agenta na zbiorze `eval/` z bramką walidacji; wynik jako PR do przeglądu, nigdy samoistna zmiana (pomysł z Microsoft SkillOpt)
 
 ## 3. Sprzęt i testy (po stronie właściciela)
 
@@ -36,11 +39,13 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [ ] Tydzień testów: tok/s, polski w Gemmie, obrazy przez mmproj, Qwen3.5 vs Bielik, oceny sędziego i ludzi
 - [ ] Test Gemmy E4B z dźwiękiem, Parakeet i EmbeddingGemma
 - [ ] Test grafu wiedzy graphify
+- [ ] Prawdziwe zrzuty i testy interfejsu aplikacji na emulatorze (`google/artemis`, Apache 2.0) — sprawdzić, czy działa z lokalnym modelem
 
 ## 4. Dojrzałość projektu
 
 - [ ] Przypięcie wersji i sum kontrolnych modeli, codzienna synchronizacja przez PR
 - [ ] Tryb dewelopera: sprawdzić Aidera, Continue, Cline i OpenCode na adresie zgodnym z OpenAI
+- [ ] Przegląd kodu lokalnym modelem (`alibaba/open-code-review`, Apache 2.0) — sprawdzić, czy przyjmie adres zgodny z OpenAI
 - [ ] Role agentów z ograniczonymi uprawnieniami i zasada „gotowe tylko z dowodem"
 
 ## Zadania w GitHubie (ręcznie)
@@ -52,4 +57,6 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 
 Frameworki LangChain, AutoGPT, CrewAI i Dify, vLLM, ComfyUI, kontenery Docker z Portainerem i n8n,
 modele z licencją badawczą (Arch-Router, Nemotron-Orchestrator), redakcja PDF przez pymupdf (AGPL),
-modele „Claude/Fable distill".
+modele „Claude/Fable distill", repozytoria z samoaktualizacją i zdalnymi ogłoszeniami (`dsh-our-free-model`),
+agregatory darmowych API chmurowych (`freellmapi`), agent z dostępem do prawdziwego, zalogowanego Chrome (`browser-harness`),
+zestaw ofensywny `reverse-skill`, narzędzia do usuwania znaczników pochodzenia AI, `gpu-unlock` (NVIDIA).
