@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..files import FileStore
 from ..storage import Storage
+from . import files_tools
 from .policy import Risk, ToolSpec
 from .runner import Executor
 from .tools import calculator, current_time
@@ -15,10 +17,14 @@ SAVE_NOTE = ToolSpec("save_note", "Zapisuje notatkę użytkownika na urządzeniu
 CALCULATOR = ToolSpec("calculator", "Oblicza wyrażenie arytmetyczne, np. '2*(3+4)/5'.", Risk.READ)
 CURRENT_TIME = ToolSpec("current_time", "Podaje aktualną datę i godzinę (Europe/Warsaw).", Risk.READ)
 
-SPECS = [CALCULATOR, CURRENT_TIME, LIST_NOTES, SEARCH_NOTES, SAVE_NOTE]
+FILE_SPECS = [
+    files_tools.LIST_FILES, files_tools.READ_FILE, files_tools.FIND_DUPLICATES, files_tools.STALE_FILES,
+    files_tools.MERGE_CSV, files_tools.EXTRACT_ZIP, files_tools.PDF_PAGES, files_tools.DELETE_FILES,
+]
+SPECS = [CALCULATOR, CURRENT_TIME, LIST_NOTES, SEARCH_NOTES, SAVE_NOTE, *FILE_SPECS]
 
 
-def build_registry(storage: Storage) -> dict[str, tuple[ToolSpec, dict[str, Any], Executor]]:
+def build_registry(storage: Storage, files: FileStore | None = None) -> dict[str, tuple[ToolSpec, dict[str, Any], Executor]]:
     def calc(args: dict[str, Any], _device: str) -> str:
         return str(calculator(str(args.get("expression", ""))))
 
@@ -37,7 +43,7 @@ def build_registry(storage: Storage) -> dict[str, tuple[ToolSpec, dict[str, Any]
         items = storage.search_notes(device, str(args.get("query", "")))
         return "\n".join(f"- [{n['id']}] {n['text']}" for n in items) or "Nic nie znaleziono."
 
-    return {
+    registry = {
         "search_notes": (
             SEARCH_NOTES,
             {
@@ -68,3 +74,6 @@ def build_registry(storage: Storage) -> dict[str, tuple[ToolSpec, dict[str, Any]
             save,
         ),
     }
+    if files is not None:
+        registry.update(files_tools.build_file_tools(files))
+    return registry

@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from .agent.builtin import SPECS, build_registry
 from .agent.policy import PolicyConfig, ToolPolicy
 from .agent.runner import AgentRunner
+from .files import FileError, FileStore
 from .config import SYSTEM_PROMPTS, Settings, get_settings
 from .llm import LLMClient, OllamaClient
 from .router import ModelRouter
@@ -61,8 +62,9 @@ def create_app(
     pairing = pairing if pairing is not None else PairingManager(tokens, settings.pairing_file)
     store = store if store is not None else Storage(settings.db_file, settings.language)
     router = ModelRouter(settings, llm)
+    file_store = FileStore(settings.files_dir)
     # Agent: tylko narzędzia lokalne; sieć i uruchamianie kodu wyłączone (brak wykonawców).
-    agent = AgentRunner(llm, ToolPolicy(SPECS, PolicyConfig()), build_registry(store))  # type: ignore[arg-type]
+    agent = AgentRunner(llm, ToolPolicy(SPECS, PolicyConfig()), build_registry(store, file_store))  # type: ignore[arg-type]
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
     # Za `tailscale serve` adres klienta pochodzi z X-Forwarded-For; bez niego wszyscy mają 127.0.0.1.
     # Dlatego dwie osobne blokady: ostra dla parowania (kod 50-bitowy) i łagodniejsza dla tokenów
@@ -348,6 +350,25 @@ def create_app(
         if not store.delete_note(device.id, note_id):
             raise HTTPException(404, "Nie znaleziono wpisu")
         return {"deleted": note_id}
+
+    # --- pliki użytkownika (dla narzędzi agenta) ---------------------------
+    @app.get("/v1/files")
+    async def list_files(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        return {"data": file_store.list(device.id)}
+
+    @app.post("/v1/files")
+    async def upload_file(name: str, request: Request, device: DeviceToken = Depends(require_device)):
+        try:
+            saved = file_store.save(device.id, name, await request.body())
+        except FileError as exc:
+            raise HTTPException(400, str(exc)) from None
+        return {"name": saved}
+
+    @app.delete("/v1/files/{name}")
+    async def delete_file(name: str, device: DeviceToken = Depends(require_device)):
+        if not file_store.delete(device.id, name):
+            raise HTTPException(404, "Nie znaleziono pliku")
+        return {"deleted": name}
 
     return app
 

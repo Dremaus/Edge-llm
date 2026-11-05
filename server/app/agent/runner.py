@@ -160,11 +160,12 @@ class AgentRunner:
                 name = str(fn.get("name", ""))
                 call_id = str(call.get("id") or secrets.token_hex(4))
                 args = _parse_args(fn.get("arguments"))
-                decision, reason = (
-                    (Decision.DENY, "nieprawidłowe argumenty")
-                    if args is None
-                    else self._policy.decide(name, budget)
-                )
+                if args is None:
+                    decision, reason = Decision.DENY, "nieprawidłowe argumenty"
+                elif name not in self._tools:  # znane polityce, ale bez wykonawcy = nie istnieje
+                    decision, reason = Decision.DENY, "nieznane narzędzie"
+                else:
+                    decision, reason = self._policy.decide(name, budget)
                 steps.append({"tool": name, "decision": decision.value})
                 if decision == Decision.ALLOW:
                     ToolPolicy.record_call(name, budget)

@@ -66,3 +66,17 @@ def test_rejected_confirmation_writes_nothing():
     assert out.pending is not None
     asyncio.run(runner.confirm("phone", out.pending.id, False))
     assert storage.list_notes("phone") == []
+
+
+def test_delete_files_from_injection_waits_for_user_and_deletes_nothing(tmp_path):
+    from app.files import FileStore
+
+    storage, files = Storage(), FileStore(tmp_path)
+    files.save("phone", "wazne.txt", b"dane")
+    storage.add_note("phone", "Dokument klienta: " + PAYLOAD)
+    runner = AgentRunner(ObedientLLM(), ToolPolicy(SPECS, PolicyConfig()), build_registry(storage, files))
+    out = asyncio.run(runner.run("phone", "m", [{"role": "user", "content": "podsumuj dokument"}]))
+    assert out.pending is not None and out.pending.tool == "delete_files"
+    assert [f["name"] for f in files.list("phone")] == ["wazne.txt"]
+    asyncio.run(runner.confirm("phone", out.pending.id, False))
+    assert [f["name"] for f in files.list("phone")] == ["wazne.txt"]

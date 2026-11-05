@@ -18,6 +18,8 @@ class Settings:
     )
     # Ustawienia urządzenia i historia rozmów (SQLite).
     db_file: str = field(default_factory=lambda: _env("EDGE_DB_FILE", "/var/lib/edge-llm/edge.db"))
+    # Pliki użytkownika dla agenta (osobny katalog na telefon).
+    files_dir: str = field(default_factory=lambda: _env("EDGE_FILES_DIR", "/var/lib/edge-llm/files"))
     # Jednorazowe kody parowania (patrz app/security/pairing.py).
     pairing_file: str = field(
         default_factory=lambda: _env("EDGE_PAIRING_FILE", "/var/lib/edge-llm/pairing.json")

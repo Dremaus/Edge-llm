@@ -292,3 +292,19 @@ def test_memory_list_and_delete_isolated():
     assert client.delete(f"/v1/memory/{note_id}", headers=h2).status_code == 404
     assert client.delete(f"/v1/memory/{note_id}", headers=h1).status_code == 200
     assert client.get("/v1/memory", headers=h1).json()["data"] == []
+
+
+def test_files_upload_list_delete_isolated(tmp_path):
+    tokens = TokenStore()
+    _, t1 = tokens.create("a")
+    _, t2 = tokens.create("b")
+    client = TestClient(
+        create_app(Settings(main_model="main", files_dir=str(tmp_path)), FakeLLM(), tokens, PairingManager(tokens), Storage())
+    )
+    h1, h2 = {"Authorization": f"Bearer {t1}"}, {"Authorization": f"Bearer {t2}"}
+    assert client.post("/v1/files?name=notatki.txt", headers=h1, content=b"hej").json() == {"name": "notatki.txt"}
+    assert client.post("/v1/files?name=../x", headers=h1, content=b"x").status_code == 400
+    assert [f["name"] for f in client.get("/v1/files", headers=h1).json()["data"]] == ["notatki.txt"]
+    assert client.get("/v1/files", headers=h2).json()["data"] == []
+    assert client.delete("/v1/files/notatki.txt", headers=h2).status_code == 404
+    assert client.delete("/v1/files/notatki.txt", headers=h1).status_code == 200
