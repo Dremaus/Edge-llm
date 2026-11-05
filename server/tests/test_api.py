@@ -168,7 +168,7 @@ def test_models_lists_only_allowed():
     client, _, headers, _ = make_client()
     ids = [m["id"] for m in client.get("/v1/models", headers=headers).json()["data"]]
     assert ids[0] == "auto"
-    assert "main" in ids and "granite4.2:8b" not in ids  # model kodu wyłączony
+    assert "main" in ids and "code" not in ids  # model kodu wyłączony
 
 
 def test_onboarding_settings_change_language_and_model():

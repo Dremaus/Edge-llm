@@ -105,6 +105,7 @@ systemctl enable ollama
 systemctl restart ollama
 
 echo "==> Pobieranie modeli z device/models.yaml"
+CHOSEN_MAIN="" CHOSEN_CODE=""
 pull_model() {
   local id=$1 role=$2 status=$3 min=$4 max=$5
   [[ -z $id ]] && return
@@ -119,6 +120,10 @@ pull_model() {
   else
     echo "    ollama pull $id"
     ollama pull "$id"
+    case $role in
+      main) CHOSEN_MAIN=$id ;;
+      code) CHOSEN_CODE=$id ;;
+    esac
   fi
 }
 m_id="" m_role="" m_status="" m_min="" m_max=""
@@ -154,13 +159,15 @@ chown -R root:"$SERVICE_USER" "$INSTALL_DIR"
 chmod -R g-w,o-rwx "$INSTALL_DIR"
 
 if [[ ! -f $ENV_FILE ]]; then
-  cat > "$ENV_FILE" <<EOF
-EDGE_LANGUAGE=pl
-EDGE_CODE_MODEL_ENABLED=$WITH_CODE_MODEL
-EOF
+  printf 'EDGE_LANGUAGE=pl\n' > "$ENV_FILE"
   chown root:"$SERVICE_USER" "$ENV_FILE"
   chmod 640 "$ENV_FILE"
 fi
+# Modele wybrane według RAM (nadpisywane przy każdej instalacji).
+set_env() { grep -v "^$1=" "$ENV_FILE" > "$ENV_FILE.tmp" || true; echo "$1=$2" >> "$ENV_FILE.tmp"; cat "$ENV_FILE.tmp" > "$ENV_FILE"; rm -f "$ENV_FILE.tmp"; }
+set_env EDGE_CODE_MODEL_ENABLED "$WITH_CODE_MODEL"
+[[ -n $CHOSEN_MAIN ]] && set_env EDGE_MAIN_MODEL "$CHOSEN_MAIN"
+[[ -n $CHOSEN_CODE && $WITH_CODE_MODEL -eq 1 ]] && set_env EDGE_CODE_MODEL "$CHOSEN_CODE"
 
 install -m 644 "$REPO_DIR/device/systemd/edge-llm.service" /etc/systemd/system/edge-llm.service
 systemctl daemon-reload

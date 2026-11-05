@@ -34,7 +34,7 @@ class Settings:
             "EDGE_ALT_MODEL", "hf.co/speakleash/Bielik-4.5B-v3.0-Instruct-GGUF:Q8_0"
         )
     )
-    code_model: str = field(default_factory=lambda: _env("EDGE_CODE_MODEL", "granite4.2:8b"))
+    code_model: str = field(default_factory=lambda: _env("EDGE_CODE_MODEL", "hf.co/ressl/Ornith-1.5-35B-A3B-uncensored-GGUF:Q4_K_M"))
     # Gdy brak modelu kodu (urządzenie 8 GB), kod obsługuje model główny.
     code_model_enabled: bool = field(
         default_factory=lambda: _env("EDGE_CODE_MODEL_ENABLED", "0") == "1"

@@ -17,6 +17,7 @@ models:
   - id: qwen3.5:4b
     role: main
     status: approved
+    max_ram_gb: 23
     source: ollama-library
     license: Apache-2.0
     notes: Model główny (do czasu zatwierdzenia kandydatów poniżej); polski i angielski, rozumie obrazy; ok. 3 GB przy 4 bitach.
@@ -28,35 +29,27 @@ models:
     license: Apache-2.0
     notes: Specjalizowany w polskim; preinstalowany, włączany w ustawieniach.
 
-  - id: granite4.2:8b
-    role: code
-    status: approved
-    min_ram_gb: 24
-    source: ollama-library
-    license: Apache-2.0
-    notes: Model kodu (tymczasowy, do zastąpienia przez Ornith po testach); ok. 5,3 GB.
-
 # --- Kandydaci (decyzja 5.11.2026, do sprawdzenia w tygodniu testów) ---
 # Dla każdego: licencja według karty modelu (nie zweryfikowana), jakość po polsku (eval/),
 # wywoływanie narzędzi, odporność na złośliwy dokument. Nazwy repozytoriów HF do potwierdzenia
 # przed zmianą statusu na approved. Modele "uncensored" nie odmawiają, więc całą ochronę
 # zapewnia serwer (polityka ALLOW/CONFIRM/DENY, potwierdzenia, piaskownica).
 
-  - id: hf.co/HauhauCS/Gemma4-26B-A4B-QAT-Uncensored-HauhauCS-Balanced-MTP
+  - id: hf.co/HauhauCS/Gemma4-26B-A4B-QAT-Uncensored-HauhauCS-Balanced-MTP:Q4_K_M
     role: main
-    status: candidate
+    status: approved
     min_ram_gb: 24
-    source: huggingface
-    license: Gemma (do sprawdzenia względem Apache-2.0)
-    notes: Główny przy 32 GB; MoE (4 mld aktywnych), Q4_K_M ok. 16,8 GB + mmproj 1,2 GB (obrazy).
+    source: huggingface (sprawdzone 2026-11-05)
+    license: Gemma (warunki Google + zasady dozwolonego użycia; nie Apache-2.0 — model pobierany z HF, nie redystrybuowany)
+    notes: Główny przy 24+ GB; MoE (4 mld aktywnych), Q4_K_M 16,8 GB. Karta modelu oznacza go jako angielski — polski do sprawdzenia w eval/ (do tego czasu Bielik dla polskiego). Obrazy wymagają mmproj (1,2 GB), którego Ollama z repozytorium HF może nie wczytać — do sprawdzenia na sprzęcie. Model "uncensored": ochrona wyłącznie po stronie serwera.
 
-  - id: ornith-1.5-35b-a3b-uncensored
+  - id: hf.co/ressl/Ornith-1.5-35B-A3B-uncensored-GGUF:Q4_K_M
     role: code
-    status: candidate
+    status: approved
     min_ram_gb: 24
-    source: huggingface
+    source: huggingface (sprawdzone 2026-11-05)
     license: MIT
-    notes: Kod, ładowany na żądanie. Wyniki SWE-Bench/Terminal-Bench to deklaracje autora. Zapasowe - GLM-4.7-Flash (MIT), gpt-oss-20b.
+    notes: Kod, ładowany na żądanie (21,7 GB — nie mieści się razem z modelem głównym przy 32 GB, Ollama podmienia modele). Abliteracja po kwantyzacji Q4 zostawia ok. 4% odmów — nieistotne dla nas. Wyniki SWE-Bench/Terminal-Bench to deklaracje autora. Zapasowe - GLM-4.7-Flash (MIT), gpt-oss-20b.
 
   - id: hauhaucs-gemma-4-e4b
     role: main
