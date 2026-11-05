@@ -7,6 +7,7 @@ import '../api.dart';
 import '../images.dart';
 import '../secure_store.dart';
 import '../strings.dart';
+import 'memory.dart';
 import 'settings.dart';
 import 'status.dart';
 
@@ -219,6 +220,13 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.handyman_outlined),
             selectedIcon: const Icon(Icons.handyman),
             onPressed: () => setState(() => _toolsMode = !_toolsMode),
+          ),
+          IconButton(
+            tooltip: s.t('memory_title'),
+            icon: const Icon(Icons.psychology_alt_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => MemoryScreen(api: widget.api, lang: widget.lang)),
+            ),
           ),
           IconButton(
             tooltip: s.t('status'),

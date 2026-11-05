@@ -49,4 +49,15 @@ void main() {
     expect(jsonDecode(seen.body), {'approve': true});
     expect(seen.headers['Authorization'], 'Bearer tok');
   });
+
+  test('deleteMemory wysyła DELETE /v1/memory/{id}', () async {
+    late http.Request seen;
+    final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {
+      seen = req;
+      return http.Response(jsonEncode({'deleted': 7}), 200);
+    }));
+    await api.deleteMemory(7);
+    expect(seen.method, 'DELETE');
+    expect(seen.url.path, '/v1/memory/7');
+  });
 }
