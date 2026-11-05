@@ -11,7 +11,7 @@ Pełny plan projektu (cele, sprzęt, modele, architektura, koszty, roadmapa) jes
 | `server/` | Serwer API (FastAPI) z orkiestratorem LangGraph: router modeli, API zgodne z OpenAI, strumieniowanie SSE, uwierzytelnianie |
 | `device/` | Instalacja urządzenia: skrypt instalacyjny, katalog modeli z Hugging Face, usługa systemd |
 | `mobile/` | Aplikacja na Androida i iOS (Flutter): kreator, parowanie QR, czat |
-| `docs/` | API (`api.md`), bezpieczeństwo (`security.md`), decyzje (`decisions.md`) |
+| `docs/` | API (`api.md`), bezpieczeństwo (`security.md`), decyzje (`decisions.md`), plan prac (`roadmap.md`) |
 | `eval/`, `tools/` | Zestaw 100 pytań PL/EN i benchmark na tydzień testów |
 
 ## Założenia (stan na 31.10.2026)
