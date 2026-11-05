@@ -280,7 +280,8 @@ def test_agent_confirmation_flow_over_http():
 def test_memory_list_and_delete_isolated():
     storage = Storage()
     tokens = TokenStore()
-    id_a, t1 = tokens.create("a")
+    dev_a, t1 = tokens.create("a")
+    id_a = dev_a.id
     _, t2 = tokens.create("b")
     client = TestClient(create_app(Settings(main_model="main"), FakeLLM(), tokens, PairingManager(tokens), storage))
     h1, h2 = {"Authorization": f"Bearer {t1}"}, {"Authorization": f"Bearer {t2}"}

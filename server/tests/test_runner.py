@@ -97,7 +97,7 @@ def test_unknown_tool_and_bad_arguments_are_denied():
 def test_tools_hidden_from_model_when_policy_denies():
     r, llm, _ = runner([{"content": "hej"}])
     run(r.run("phone", "m", user("hej")))
-    assert set(llm.tools_seen[0]) == {"calculator", "current_time", "list_notes", "save_note"}
+    assert set(llm.tools_seen[0]) == {"calculator", "current_time", "list_notes", "search_notes", "save_note"}
 
 
 def test_step_limit_stops_loops():

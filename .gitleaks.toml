@@ -1,0 +1,8 @@
+title = "Edge-LLM gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Sztuczne sekrety w testach maskowania (server/tests/test_memory.py)"
+paths = ['''server/tests/test_memory\.py''']
