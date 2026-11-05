@@ -338,6 +338,17 @@ def create_app(
     async def delete_all_conversations(device: DeviceToken = Depends(require_device)):
         return {"deleted": store.delete_all(device.id)}
 
+    # --- pamięć agenta (notatki): podgląd i usuwanie przez użytkownika -----
+    @app.get("/v1/memory")
+    async def list_memory(device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        return {"data": store.list_notes(device.id, 100)}
+
+    @app.delete("/v1/memory/{note_id}")
+    async def delete_memory(note_id: int, device: DeviceToken = Depends(require_device)):
+        if not store.delete_note(device.id, note_id):
+            raise HTTPException(404, "Nie znaleziono wpisu")
+        return {"deleted": note_id}
+
     return app
 
 

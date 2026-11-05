@@ -10,11 +10,12 @@ from .runner import Executor
 from .tools import calculator, current_time
 
 LIST_NOTES = ToolSpec("list_notes", "Pokazuje ostatnie notatki użytkownika.", Risk.READ)
+SEARCH_NOTES = ToolSpec("search_notes", "Szuka w notatkach (pamięci) użytkownika po słowach kluczowych.", Risk.READ)
 SAVE_NOTE = ToolSpec("save_note", "Zapisuje notatkę użytkownika na urządzeniu.", Risk.WRITE)
 CALCULATOR = ToolSpec("calculator", "Oblicza wyrażenie arytmetyczne, np. '2*(3+4)/5'.", Risk.READ)
 CURRENT_TIME = ToolSpec("current_time", "Podaje aktualną datę i godzinę (Europe/Warsaw).", Risk.READ)
 
-SPECS = [CALCULATOR, CURRENT_TIME, LIST_NOTES, SAVE_NOTE]
+SPECS = [CALCULATOR, CURRENT_TIME, LIST_NOTES, SEARCH_NOTES, SAVE_NOTE]
 
 
 def build_registry(storage: Storage) -> dict[str, tuple[ToolSpec, dict[str, Any], Executor]]:
@@ -32,7 +33,20 @@ def build_registry(storage: Storage) -> dict[str, tuple[ToolSpec, dict[str, Any]
         items = storage.list_notes(device)
         return "\n".join(f"- {n['text']}" for n in items) or "Brak notatek."
 
+    def search(args: dict[str, Any], device: str) -> str:
+        items = storage.search_notes(device, str(args.get("query", "")))
+        return "\n".join(f"- [{n['id']}] {n['text']}" for n in items) or "Nic nie znaleziono."
+
     return {
+        "search_notes": (
+            SEARCH_NOTES,
+            {
+                "type": "object",
+                "properties": {"query": {"type": "string", "description": "Słowa kluczowe"}},
+                "required": ["query"],
+            },
+            search,
+        ),
         "calculator": (
             CALCULATOR,
             {

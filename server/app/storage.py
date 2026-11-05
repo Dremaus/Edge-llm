@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 import sqlite3
 import threading
@@ -16,6 +17,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from .security.redact import mask_content, mask_secrets
 
 LANGUAGES = ("pl", "en")
 CHAT_MODELS = ("qwen", "bielik")
@@ -50,6 +53,13 @@ CREATE TABLE IF NOT EXISTS notes (
     created INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS notes_device ON notes(device_id, id DESC);
+CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(text, content='notes', content_rowid='id');
+CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
+    INSERT INTO notes_fts(rowid, text) VALUES (new.id, new.text);
+END;
+CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
+    INSERT INTO notes_fts(notes_fts, rowid, text) VALUES ('delete', old.id, old.text);
+END;
 """
 
 
@@ -152,7 +162,7 @@ class Storage:
     ) -> None:
         if not self.owns(device_id, conv_id):
             raise KeyError(conv_id)
-        stored = content if isinstance(content, str) else json.dumps(_strip_images(content))
+        stored = mask_content(content) if isinstance(content, str) else json.dumps(mask_content(_strip_images(content)))
         now = int(time.time())
         with self._lock:
             self._db.execute(
@@ -201,7 +211,7 @@ class Storage:
 
     # --- notatki (narzędzie agenta) ---------------------------------------
     def add_note(self, device_id: str, text: str) -> int:
-        text = text.strip()[:MAX_NOTE]
+        text = mask_secrets(text.strip()[:MAX_NOTE])
         if not text:
             raise ValueError("Pusta notatka")
         with self._lock:
@@ -224,6 +234,26 @@ class Storage:
                 (device_id, max(1, min(limit, 100))),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def search_notes(self, device_id: str, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Wyszukiwanie pełnotekstowe (FTS5) wśród notatek tego urządzenia."""
+        words = re.findall(r"\w{2,}", query.lower())[:8]
+        if not words:
+            return []
+        match = " OR ".join(f'"{w}"' for w in words)  # cytowanie: bez składni FTS z danych użytkownika
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT n.id, n.text, n.created FROM notes_fts f JOIN notes n ON n.id = f.rowid "
+                "WHERE notes_fts MATCH ? AND n.device_id = ? ORDER BY rank LIMIT ?",
+                (match, device_id, max(1, min(limit, 20))),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def delete_note(self, device_id: str, note_id: int) -> bool:
+        with self._lock:
+            cur = self._db.execute("DELETE FROM notes WHERE id = ? AND device_id = ?", (note_id, device_id))
+            self._db.commit()
+        return cur.rowcount > 0
 
 
 MAX_NOTE = 2000

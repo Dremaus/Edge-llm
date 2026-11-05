@@ -275,3 +275,19 @@ def test_agent_confirmation_flow_over_http():
     assert client.post(f"/v1/agent/actions/{action}", headers=h1, json={"approve": "tak"}).status_code == 400
     done = client.post(f"/v1/agent/actions/{action}", headers=h1, json={"approve": True}).json()
     assert done == {"steps": [{"tool": "save_note", "decision": "confirmed"}], "status": "done", "content": "Zapisałem."}
+
+
+def test_memory_list_and_delete_isolated():
+    storage = Storage()
+    tokens = TokenStore()
+    id_a, t1 = tokens.create("a")
+    _, t2 = tokens.create("b")
+    client = TestClient(create_app(Settings(main_model="main"), FakeLLM(), tokens, PairingManager(tokens), storage))
+    h1, h2 = {"Authorization": f"Bearer {t1}"}, {"Authorization": f"Bearer {t2}"}
+    note_id = storage.add_note(id_a, "lubię kawę, token: sekret9999")
+    data = client.get("/v1/memory", headers=h1).json()["data"]
+    assert len(data) == 1 and "sekret9999" not in data[0]["text"]
+    assert client.get("/v1/memory", headers=h2).json()["data"] == []
+    assert client.delete(f"/v1/memory/{note_id}", headers=h2).status_code == 404
+    assert client.delete(f"/v1/memory/{note_id}", headers=h1).status_code == 200
+    assert client.get("/v1/memory", headers=h1).json()["data"] == []
