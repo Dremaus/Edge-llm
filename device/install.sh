@@ -2,11 +2,13 @@
 # Instalacja asystenta na urządzeniu.
 # Platforma docelowa: mini PC z AMD Ryzen AI (Radeon 860M/880M/890M), Ubuntu 24.04, kernel 6.14+.
 #
-# Użycie: sudo device/install.sh [--with-code-model|--no-code-model] [--harden-ssh] [--no-performance]
+# Użycie: sudo device/install.sh [--with-code-model|--no-code-model] [--harden-ssh] [--no-performance] [--keep-ollama-online]
 #   --with-code-model  wymusza pobranie modelu kodu (domyślnie: tylko przy 24+ GB RAM)
 #   --no-code-model    pomija model kodu niezależnie od pamięci
 #   --harden-ssh       wyłącza logowanie hasłem i roota przez SSH (wymaga klucza w authorized_keys)
 #   --no-performance   nie przełącza profilu zasilania na wydajność
+#   --keep-ollama-online  nie blokuje internetu Ollamy po pobraniu modeli (domyślnie blokuje;
+#                      aktualizacja modeli: sudo device/pull-models.sh)
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,12 +19,14 @@ ENV_FILE=/etc/edge-llm.env
 WITH_CODE_MODEL=auto
 HARDEN_SSH=0
 PERFORMANCE=1
+OLLAMA_OFFLINE=1
 for arg in "$@"; do
   case "$arg" in
     --with-code-model) WITH_CODE_MODEL=1 ;;
     --no-code-model) WITH_CODE_MODEL=0 ;;
     --harden-ssh) HARDEN_SSH=1 ;;
     --no-performance) PERFORMANCE=0 ;;
+    --keep-ollama-online) OLLAMA_OFFLINE=0 ;;
     *) echo "Nieznana opcja: $arg" >&2; exit 2 ;;
   esac
 done
@@ -106,38 +110,25 @@ systemctl restart ollama
 
 echo "==> Pobieranie modeli z device/models.yaml"
 CHOSEN_MAIN="" CHOSEN_CODE=""
-pull_model() {
-  local id=$1 role=$2 status=$3 min=$4 max=$5
-  [[ -z $id ]] && return
-  if [[ $status != approved ]]; then
-    echo "    pomijam (status: ${status:-brak}): $id"
-  elif [[ $role == code && $WITH_CODE_MODEL -eq 0 ]]; then
-    echo "    pomijam model kodu: $id (mniej niż 24 GB RAM; wymuś: --with-code-model)"
-  elif [[ -n $min ]] && (( RAM_GB < min )) && ! [[ $role == code && $WITH_CODE_MODEL -eq 1 ]]; then
-    echo "    pomijam (wymaga ${min}+ GB RAM): $id"
-  elif [[ -n $max ]] && (( RAM_GB > max )); then
-    echo "    pomijam (przeznaczony dla ${max} GB RAM lub mniej): $id"
-  else
-    echo "    ollama pull $id"
-    ollama pull "$id"
-    case $role in
-      main) CHOSEN_MAIN=$id ;;
-      code) CHOSEN_CODE=$id ;;
-    esac
-  fi
-}
-m_id="" m_role="" m_status="" m_min="" m_max=""
-while IFS= read -r line; do
-  if [[ $line =~ ^[[:space:]]*-[[:space:]]id:[[:space:]]*(.+)$ ]]; then
-    pull_model "$m_id" "$m_role" "$m_status" "$m_min" "$m_max"
-    m_id="${BASH_REMATCH[1]}" m_role="" m_status="" m_min="" m_max=""
-  elif [[ $line =~ ^[[:space:]]+role:[[:space:]]*([a-z]+) ]]; then m_role="${BASH_REMATCH[1]}"
-  elif [[ $line =~ ^[[:space:]]+status:[[:space:]]*([a-z]+) ]]; then m_status="${BASH_REMATCH[1]}"
-  elif [[ $line =~ ^[[:space:]]+min_ram_gb:[[:space:]]*([0-9]+) ]]; then m_min="${BASH_REMATCH[1]}"
-  elif [[ $line =~ ^[[:space:]]+max_ram_gb:[[:space:]]*([0-9]+) ]]; then m_max="${BASH_REMATCH[1]}"
-  fi
-done < "$REPO_DIR/device/models.yaml"
-pull_model "$m_id" "$m_role" "$m_status" "$m_min" "$m_max"
+code_flag=()
+[[ $WITH_CODE_MODEL -eq 1 ]] && code_flag=(--with-code-model) || code_flag=(--no-code-model)
+while IFS=$'\t' read -r role model_id; do
+  [[ -z $model_id ]] && continue
+  echo "    ollama pull $model_id"
+  ollama pull "$model_id"
+  case $role in
+    main) CHOSEN_MAIN=$model_id ;;
+    code) CHOSEN_CODE=$model_id ;;
+  esac
+done < <(python3 "$REPO_DIR/tools/select_models.py" "$REPO_DIR/device/models.yaml" --ram-gb "$RAM_GB" --with-roles "${code_flag[@]}")
+
+if (( OLLAMA_OFFLINE )); then
+  # Modele są na dysku — Ollama nie potrzebuje już internetu (aktualizacja: sudo device/pull-models.sh).
+  install -m 644 "$REPO_DIR/device/systemd/ollama-offline.conf" /etc/systemd/system/ollama.service.d/egress.conf
+  systemctl daemon-reload
+  systemctl restart ollama
+  echo "==> Ollama bez dostępu do internetu (blokada w systemd)"
+fi
 
 echo "==> Serwer API"
 id -u "$SERVICE_USER" >/dev/null 2>&1 || useradd --system --home "$INSTALL_DIR" --shell /usr/sbin/nologin "$SERVICE_USER"

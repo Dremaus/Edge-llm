@@ -31,3 +31,10 @@ MVP: Tailscale. Port 8080 nie jest wystawiany do internetu — telefon łączy s
 - [ ] Przypięcie wersji i sum kontrolnych modeli w `models.yaml`
 - [x] Monitoring temperatury, pamięci i grafiki (`/v1/status`)
 - [ ] Podpisane aktualizacje
+
+## Internet dla Ollamy
+
+Po pobraniu modeli instalator blokuje Ollamie ruch wychodzący (systemd: `IPAddressDeny=any`, tylko localhost).
+Serwer API ma tę blokadę od początku. Aktualizacja modeli: `sudo device/pull-models.sh` — zdejmuje blokadę
+na czas pobierania i przywraca ją po zakończeniu, także po błędzie. Opcja `--keep-ollama-online` w instalatorze
+pomija blokadę.

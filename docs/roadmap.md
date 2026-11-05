@@ -15,7 +15,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 
 ## 1. Bezpieczeństwo (najpierw)
 
-- [ ] Zablokować ruch wychodzący Ollamy po pobraniu modeli (badanie Cohere: model próbował wysłać dane do chmury)
+- [x] Zablokować ruch wychodzący Ollamy po pobraniu modeli (badanie Cohere: model próbował wysłać dane do chmury); aktualizacja przez `device/pull-models.sh`
 - [ ] `edge-llm doctor`: Lynis, ssh-audit, kontrola portów, skan plików konfiguracji pod ukryte polecenia (pomysł z ECC)
 - [ ] ZAP i trivy w CI
 - [ ] Piaskownica podman/gVisor (lub OpenSandbox) przed włączeniem uruchamiania kodu
@@ -27,7 +27,8 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [ ] Głos: whisper.cpp z Vulkanem, endpoint transkrypcji, przycisk mikrofonu; później Kokoro-82M do odpowiedzi głosowych
 - [ ] OCR skanów PDF (PaddleOCR-VL)
 - [ ] Lokalny RAG na własnych dokumentach: osadzenia EmbeddingGemma lub nomic-embed-text, router 0,8B filtruje fragmenty
-- [ ] Klasyfikator routera, ewentualnie dostrojony LoRA
+- [ ] Klasyfikator routera, ewentualnie dostrojony LoRA (uczenie na osobnym komputerze, np. LlamaFactory, Apache 2.0)
+- [ ] Kompresja wyników narzędzi i historii przed wysłaniem do modelu: sprawdzić `headroom` (Apache 2.0, działa lokalnie) albo prostą własną deduplikację logów i JSON — krótszy prompt to szybszy start odpowiedzi
 - [ ] Generowanie aplikacji krok po kroku z testem po każdym kroku
 - [ ] Kontrola wygenerowanych stron w przeglądarce bez okna: kontrast, fokus, układ na telefonie (pomysł z `hallmark`)
 - [ ] Styl odpowiedzi w ustawieniach: normalny / krótki / prosty (pomysły z `i-have-adhd` i `caveman`). Krótki styl skraca też czas generowania na wolnym sprzęcie; sprawdzić utratę jakości oceną sędziego
@@ -60,5 +61,5 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 Frameworki LangChain, AutoGPT, CrewAI i Dify, vLLM, ComfyUI, kontenery Docker z Portainerem i n8n,
 modele z licencją badawczą (Arch-Router, Nemotron-Orchestrator), redakcja PDF przez pymupdf (AGPL),
 modele „Claude/Fable distill", repozytoria z samoaktualizacją i zdalnymi ogłoszeniami (`dsh-our-free-model`),
-agregatory darmowych API chmurowych (`freellmapi`), agent z dostępem do prawdziwego, zalogowanego Chrome (`browser-harness`),
+agregatory darmowych API chmurowych (`freellmapi`), agent z dostępem do prawdziwego, zalogowanego Chrome (`browser-harness`), n8n, Firecrawl, Open WebUI, Dify i WebUI Stable Diffusion (licencje), Deep-Live-Cam (podmiana twarzy), narzędzia AGPL (VoiceStudio, OpenMontage, worldmonitor), Gemini CLI (tylko Google Cloud),
 zestaw ofensywny `reverse-skill`, wycieki promptów komercyjnych narzędzi (`system-prompts-and-models-of-ai-tools`, GPL), agenci z autonomicznym tworzeniem własnych umiejętności (`hermes-agent`), asystent z kanałami komunikatorów i instalatorem `curl | bash` (`openclaw`), Supabase, narzędzia do usuwania znaczników pochodzenia AI, `gpu-unlock` (NVIDIA).
