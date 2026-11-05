@@ -18,6 +18,11 @@ Wszystkie endpointy poza `/health` i `/v1/pair` wymagają nagłówka `Authorizat
 | GET | `/v1/conversations` | Lista rozmów tego telefonu |
 | GET / DELETE | `/v1/conversations/{id}` | Jedna rozmowa / usunięcie |
 | DELETE | `/v1/conversations` | Usunięcie wszystkich rozmów tego telefonu |
+| GET | `/v1/memory` | Notatki zapisane przez asystenta (pamięć), sekrety zamaskowane |
+| DELETE | `/v1/memory/{id}` | Usunięcie wpisu pamięci |
+| GET | `/v1/files` | Pliki tego telefonu dla narzędzi agenta |
+| POST | `/v1/files?name=…` | Wysłanie pliku (surowe bajty, do 20 MB; limit 500 plików i 300 MB). Odpowiedź: `{"name": …}` — serwer może dopisać „(2)” przy powtórzonej nazwie |
+| DELETE | `/v1/files/{name}` | Usunięcie pliku |
 
 ## Parowanie
 

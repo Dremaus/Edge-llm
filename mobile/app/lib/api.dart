@@ -113,6 +113,22 @@ class EdgeApi {
 
   Future<void> deleteMemory(int id) => _json('DELETE', '/v1/memory/$id');
 
+  /// Pliki użytkownika dla narzędzi agenta (PDF, arkusze, tekst).
+  Future<List<dynamic>> files() async => (await _json('GET', '/v1/files'))['data'] as List<dynamic>;
+
+  /// Wysyła plik; serwer może zmienić nazwę (np. „raport (2).pdf”) i zwraca zapisaną.
+  Future<String> uploadFile(String name, List<int> bytes) async {
+    final res = await _client.post(
+      baseUrl.resolve('/v1/files').replace(queryParameters: {'name': name}),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/octet-stream'},
+      body: bytes,
+    );
+    if (res.statusCode != 200) throw ApiException(res.statusCode);
+    return (jsonDecode(res.body) as Map<String, dynamic>)['name'] as String;
+  }
+
+  Future<void> deleteFile(String name) => _json('DELETE', '/v1/files/${Uri.encodeComponent(name)}');
+
   Future<List<dynamic>> devices() async => (await _json('GET', '/v1/devices'))['data'] as List<dynamic>;
 
   /// Zadanie z narzędziami. Wynik: status `done` z `content` albo `needs_confirmation` z `action`.

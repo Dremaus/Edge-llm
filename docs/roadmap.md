@@ -23,7 +23,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 
 ## 2. Funkcje
 
-- [ ] Wgrywanie plików z telefonu (wybór pliku w aplikacji)
+- [x] Wgrywanie plików z telefonu (ekran „Moje pliki” w aplikacji)
 - [ ] Głos: whisper.cpp z Vulkanem, endpoint transkrypcji, przycisk mikrofonu; później Kokoro-82M do odpowiedzi głosowych
 - [ ] OCR skanów PDF (PaddleOCR-VL)
 - [ ] Lokalny RAG na własnych dokumentach: osadzenia EmbeddingGemma lub nomic-embed-text, router 0,8B filtruje fragmenty

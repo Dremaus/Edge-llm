@@ -16,6 +16,8 @@ dependencies:
   mobile_scanner: ^5.2.3
   # Zdjęcia do analizy (zmniejszane przy wyborze).
   image_picker: ^1.1.2
+  # Wybór plików (PDF, arkusze) do narzędzi agenta.
+  file_picker: ^8.1.2
   # Blokada aplikacji biometrią / PIN-em telefonu.
   local_auth: ^2.3.0
 

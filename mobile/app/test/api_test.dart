@@ -60,4 +60,25 @@ void main() {
     expect(seen.method, 'DELETE');
     expect(seen.url.path, '/v1/memory/7');
   });
+
+  test('uploadFile wysyła surowe bajty z nazwą w zapytaniu', () async {
+    late http.Request seen;
+    final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {
+      seen = req;
+      return http.Response(jsonEncode({'name': 'raport (2).pdf'}), 200);
+    }));
+    final saved = await api.uploadFile('raport.pdf', [1, 2, 3]);
+    expect(saved, 'raport (2).pdf');
+    expect(seen.method, 'POST');
+    expect(seen.url.path, '/v1/files');
+    expect(seen.url.queryParameters['name'], 'raport.pdf');
+    expect(seen.bodyBytes, [1, 2, 3]);
+    expect(seen.headers['Authorization'], 'Bearer tok');
+  });
+
+  test('uploadFile zgłasza błąd serwera', () async {
+    final api = EdgeApi(Uri.parse('https://x'), 'tok',
+        client: MockClient((req) async => http.Response('{"detail":"x"}', 400)));
+    expect(() => api.uploadFile('a.txt', [1]), throwsA(isA<ApiException>()));
+  });
 }
