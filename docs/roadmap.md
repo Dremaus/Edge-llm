@@ -16,7 +16,8 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 ## 1. Bezpieczeństwo (najpierw)
 
 - [x] Zablokować ruch wychodzący Ollamy po pobraniu modeli (badanie Cohere: model próbował wysłać dane do chmury); aktualizacja przez `device/pull-models.sh`
-- [ ] `edge-llm doctor`: Lynis, ssh-audit, kontrola portów, skan plików konfiguracji pod ukryte polecenia (pomysł z ECC)
+- [x] `edge-llm doctor` (`sudo edge-llm-doctor`): usługi, porty, zapora, SSH, uprawnienia, blokada Ollamy, LUKS, TPM, Secure Boot, poprawki
+- [ ] Doctor: uruchamianie Lynis i ssh-audit oraz skan plików konfiguracji pod ukryte polecenia (pomysł z ECC)
 - [ ] ZAP i trivy w CI
 - [ ] Piaskownica podman/gVisor (lub OpenSandbox) przed włączeniem uruchamiania kodu
 - [ ] Dziennik wykonanych narzędzi i zapytań sieciowych
@@ -26,6 +27,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [x] Wgrywanie plików z telefonu (ekran „Moje pliki” w aplikacji)
 - [ ] Głos: serwer i instalator gotowe (whisper.cpp v1.9.5 z Vulkanem, `/v1/audio/transcriptions`); brakuje przycisku mikrofonu w aplikacji i przypięcia sumy kontrolnej modelu; później Kokoro-82M do odpowiedzi głosowych
 - [ ] OCR skanów PDF (PaddleOCR-VL)
+- [ ] NER/PII z obsługą polskiego (GLiNER wielojęzyczny, polskie modele NER) obok maskowania sekretów; modele z innych źródeł bez polskiego odpadają
 - [ ] Lokalny RAG na własnych dokumentach: osadzenia EmbeddingGemma lub nomic-embed-text, router 0,8B filtruje fragmenty
 - [ ] Klasyfikator routera, ewentualnie dostrojony LoRA (uczenie na osobnym komputerze, np. LlamaFactory, Apache 2.0)
 - [ ] Kompresja wyników narzędzi i historii przed wysłaniem do modelu: sprawdzić `headroom` (Apache 2.0, działa lokalnie) albo prostą własną deduplikację logów i JSON — krótszy prompt to szybszy start odpowiedzi

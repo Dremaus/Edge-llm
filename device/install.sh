@@ -222,6 +222,12 @@ EOF
   fi
 fi
 
+cat > /usr/local/bin/edge-llm-doctor <<'DOC'
+#!/usr/bin/env bash
+cd /opt/edge-llm/server && exec /opt/edge-llm/venv/bin/python -m app.doctor "$@"
+DOC
+chmod 755 /usr/local/bin/edge-llm-doctor
+
 cat <<'EOF'
 ==> Gotowe.
 
@@ -233,6 +239,8 @@ Kolejne kroki (wymagają interakcji):
   4. Sparuj telefon (kod QR ważny 10 minut, jednorazowy):
        cd /opt/edge-llm/server && sudo -u edge EDGE_PUBLIC_URL=https://<nazwa>.<tailnet>.ts.net \
          /opt/edge-llm/venv/bin/python -m app.security.pairing new
+
+Przegląd bezpieczeństwa i stanu (tylko odczyt): sudo edge-llm-doctor
 
 Zarządzanie tokenami telefonów:
   cd /opt/edge-llm/server && sudo -u edge EDGE_TOKENS_FILE=/var/lib/edge-llm/tokens.json \
