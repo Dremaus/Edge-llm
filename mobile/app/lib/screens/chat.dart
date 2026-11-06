@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:record/record.dart';
 
 import '../api.dart';
 import '../images.dart';
@@ -42,6 +44,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _conversationId;
   bool _sending = false;
   bool _toolsMode = false;
+  final _recorder = AudioRecorder();
+  bool _recording = false;
+  bool _transcribing = false;
 
   S get s => S(widget.lang);
 
@@ -98,6 +103,50 @@ class _ChatScreenState extends State<ChatScreen> {
     await widget.api.deleteConversation(id);
     if (_conversationId == id) _newConversation();
     await _refreshConversations();
+  }
+
+  /// Mikrofon: pierwsze dotknięcie zaczyna nagrywanie, drugie kończy i wstawia rozpoznany tekst do pola.
+  /// Nagranie jest kasowane z telefonu zaraz po wysłaniu do urządzenia.
+  Future<void> _toggleMic() async {
+    if (_transcribing) return;
+    if (!_recording) {
+      if (!await _recorder.hasPermission()) {
+        _showError(s.t('mic_denied'));
+        return;
+      }
+      final path = '${Directory.systemTemp.path}/edge_llm_${DateTime.now().microsecondsSinceEpoch}.wav';
+      await _recorder.start(const RecordConfig(encoder: AudioEncoder.wav, sampleRate: 16000, numChannels: 1), path: path);
+      setState(() => _recording = true);
+      return;
+    }
+    final path = await _recorder.stop();
+    setState(() {
+      _recording = false;
+      _transcribing = true;
+    });
+    if (path == null) {
+      setState(() => _transcribing = false);
+      return;
+    }
+    final file = File(path);
+    try {
+      final text = await widget.api.transcribe(await file.readAsBytes());
+      if (text.isNotEmpty) {
+        _input.text = _input.text.isEmpty ? text : '${_input.text} $text';
+        _input.selection = TextSelection.collapsed(offset: _input.text.length);
+      }
+    } catch (_) {
+      if (mounted) _showError(s.t('stt_failed'));
+    } finally {
+      if (await file.exists()) await file.delete();
+      if (mounted) setState(() => _transcribing = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _recorder.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -351,6 +400,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration: InputDecoration(hintText: s.t('input_hint')),
                       onSubmitted: (_) => _send(),
                     ),
+                  ),
+                  IconButton(
+                    tooltip: s.t(_recording ? 'mic_stop' : 'mic'),
+                    onPressed: _sending || _transcribing ? null : _toggleMic,
+                    icon: _transcribing
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Icon(_recording ? Icons.stop_circle : Icons.mic_none, color: _recording ? Colors.red : null),
                   ),
                   IconButton(onPressed: _sending ? null : _send, icon: const Icon(Icons.send)),
                 ],

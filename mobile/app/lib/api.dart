@@ -129,6 +129,17 @@ class EdgeApi {
 
   Future<void> deleteFile(String name) => _json('DELETE', '/v1/files/${Uri.encodeComponent(name)}');
 
+  /// Mowa na tekst (whisper.cpp na urządzeniu). Wysyła surowe bajty nagrania (WAV).
+  Future<String> transcribe(List<int> audio) async {
+    final res = await _client.post(
+      baseUrl.resolve('/v1/audio/transcriptions'),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/octet-stream'},
+      body: audio,
+    );
+    if (res.statusCode != 200) throw ApiException(res.statusCode);
+    return ((jsonDecode(res.body) as Map<String, dynamic>)['text'] as String? ?? '').trim();
+  }
+
   Future<List<dynamic>> devices() async => (await _json('GET', '/v1/devices'))['data'] as List<dynamic>;
 
   /// Zadanie z narzędziami. Wynik: status `done` z `content` albo `needs_confirmation` z `action`.

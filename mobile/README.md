@@ -17,6 +17,8 @@ Uprawnienia do aparatu (skaner QR):
 - Android: `android/app/src/main/AndroidManifest.xml` — `<uses-permission android:name="android.permission.CAMERA"/>`
 - iOS: `ios/Runner/Info.plist` — klucz `NSCameraUsageDescription`
 
+Mikrofon (rozpoznawanie mowy): Android `<uses-permission android:name="android.permission.RECORD_AUDIO"/>`, iOS klucz `NSMicrophoneUsageDescription`.
+
 Blokada biometryczna (local_auth) na Androidzie wymaga, by `MainActivity` dziedziczyła po `FlutterFragmentActivity`; na iOS dodaj `NSFaceIDUsageDescription` do `Info.plist`. Wybór zdjęć (image_picker) na iOS wymaga `NSPhotoLibraryUsageDescription`.
 
 Zakaz zrzutów ekranu i podglądu w przełączniku aplikacji (Android): w `MainActivity` ustawić `window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)`.

@@ -81,4 +81,21 @@ void main() {
         client: MockClient((req) async => http.Response('{"detail":"x"}', 400)));
     expect(() => api.uploadFile('a.txt', [1]), throwsA(isA<ApiException>()));
   });
+
+  test('transcribe wysyła bajty i zwraca przycięty tekst', () async {
+    late http.Request seen;
+    final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {
+      seen = req;
+      return http.Response(jsonEncode({'text': ' dzień dobry '}), 200);
+    }));
+    expect(await api.transcribe([9, 8, 7]), 'dzień dobry');
+    expect(seen.url.path, '/v1/audio/transcriptions');
+    expect(seen.bodyBytes, [9, 8, 7]);
+  });
+
+  test('transcribe zgłasza 503, gdy mowa wyłączona', () async {
+    final api = EdgeApi(Uri.parse('https://x'), 'tok',
+        client: MockClient((req) async => http.Response('{"error":"x"}', 503)));
+    expect(() => api.transcribe([1]), throwsA(isA<ApiException>()));
+  });
 }

@@ -18,6 +18,8 @@ dependencies:
   image_picker: ^1.1.2
   # Wybór plików (PDF, arkusze) do narzędzi agenta.
   file_picker: ^8.1.2
+  # Nagrywanie mowy (wysyłane do lokalnego rozpoznawania na urządzeniu).
+  record: ^5.1.2
   # Blokada aplikacji biometrią / PIN-em telefonu.
   local_auth: ^2.3.0
 
