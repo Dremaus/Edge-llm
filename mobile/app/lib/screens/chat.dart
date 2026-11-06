@@ -60,6 +60,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _input.dispose();
     _scroll.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -141,12 +142,6 @@ class _ChatScreenState extends State<ChatScreen> {
       if (await file.exists()) await file.delete();
       if (mounted) setState(() => _transcribing = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _recorder.dispose();
-    super.dispose();
   }
 
   Future<void> _pickImage() async {
