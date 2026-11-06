@@ -88,7 +88,7 @@ class EdgeApi {
       body: jsonEncode({'code': code, 'device_name': deviceName}),
     );
     if (res.statusCode != 200) throw ApiException(res.statusCode);
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
     return (deviceId: body['device_id'] as String, token: body['token'] as String);
   }
 
@@ -124,7 +124,7 @@ class EdgeApi {
       body: bytes,
     );
     if (res.statusCode != 200) throw ApiException(res.statusCode);
-    return (jsonDecode(res.body) as Map<String, dynamic>)['name'] as String;
+    return (jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>)['name'] as String;
   }
 
   Future<void> deleteFile(String name) => _json('DELETE', '/v1/files/${Uri.encodeComponent(name)}');
@@ -137,7 +137,7 @@ class EdgeApi {
       body: audio,
     );
     if (res.statusCode != 200) throw ApiException(res.statusCode);
-    return ((jsonDecode(res.body) as Map<String, dynamic>)['text'] as String? ?? '').trim();
+    return ((jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>)['text'] as String? ?? '').trim();
   }
 
   Future<List<dynamic>> devices() async => (await _json('GET', '/v1/devices'))['data'] as List<dynamic>;
@@ -185,6 +185,6 @@ class EdgeApi {
     if (body != null) req.body = jsonEncode(body);
     final res = await http.Response.fromStream(await _client.send(req));
     if (res.statusCode != 200) throw ApiException(res.statusCode);
-    return jsonDecode(res.body) as Map<String, dynamic>;
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
   }
 }

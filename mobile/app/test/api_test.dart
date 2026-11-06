@@ -65,7 +65,7 @@ void main() {
     late http.Request seen;
     final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {
       seen = req;
-      return http.Response(jsonEncode({'name': 'raport (2).pdf'}), 200);
+      return http.Response.bytes(utf8.encode(jsonEncode({'name': 'raport (2).pdf'})), 200);
     }));
     final saved = await api.uploadFile('raport.pdf', [1, 2, 3]);
     expect(saved, 'raport (2).pdf');
@@ -86,7 +86,7 @@ void main() {
     late http.Request seen;
     final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {
       seen = req;
-      return http.Response(jsonEncode({'text': ' dzień dobry '}), 200);
+      return http.Response.bytes(utf8.encode(jsonEncode({'text': ' dzień dobry '})), 200);
     }));
     expect(await api.transcribe([9, 8, 7]), 'dzień dobry');
     expect(seen.url.path, '/v1/audio/transcriptions');
