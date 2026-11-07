@@ -36,7 +36,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [ ] Styl odpowiedzi w ustawieniach: normalny / krótki / prosty (pomysły z `i-have-adhd` i `caveman`). Krótki styl skraca też czas generowania na wolnym sprzęcie; sprawdzić utratę jakości oceną sędziego
 - [ ] Wyszukiwanie w historii rozmów (FTS5), jak w `hermes-agent`
 - [ ] Zadania cykliczne w języku naturalnym (np. dzienny raport) z zatwierdzeniem harmonogramu przez użytkownika; powiadomienia na telefon (pomysł z `hermes-agent`)
-- [ ] Strojenie promptów routera i reguł agenta na zbiorze `eval/` z bramką walidacji; wynik jako PR do przeglądu, nigdy samoistna zmiana (pomysł z Microsoft SkillOpt)
+- [ ] Strojenie promptów routera i reguł agenta na zbiorze `eval/` z bramką walidacji; wynik jako PR do przeglądu, nigdy samoistna zmiana (pomysł z Microsoft SkillOpt i Google Harness²: propozycje zmian testowane na tym samym zadaniu; wymaga silnego modelu-edytora, więc tylko poza urządzeniem)
 
 ## 3. Sprzęt i testy (po stronie właściciela)
 
