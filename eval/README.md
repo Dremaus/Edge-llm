@@ -11,7 +11,7 @@ Cel: na tych samych 100 pytaniach (50 PL, 50 EN) porównać modele i urządzenia
 | Gemma 4 26B-A4B (HauhauCS, główny przy 24+ GB) | `hf.co/HauhauCS/Gemma4-26B-A4B-QAT-Uncensored-HauhauCS-Balanced-MTP:Q4_K_M` |
 | Ornith-1.5-35B-A3B (kod, przy 24+ GB) | `hf.co/ressl/Ornith-1.5-35B-A3B-uncensored-GGUF:Q4_K_M` |
 | Gemma 4 E4B (16 GB) | do ustalenia tag w Ollamie |
-| DeepSeek-V4-Pro-Qwen3.5-9B-UNCENSORED-heretic (xtools-at, 16 GB, tryb rozumowania) | Apache-2.0 wg karty; widoczny tylko format safetensors (GGUF do sprawdzenia); dostrojony na odpowiedziach DeepSeek, nastawiony na matematykę/STEM; „6 języków” — sprawdzić, czy jest polski; model „myślący” = więcej tokenów = wolniej |
+| DeepSeek-V4-Pro-Qwen3.5-9B-UNCENSORED-heretic (xtools-at, 16 GB, tryb rozumowania) | Apache-2.0 wg karty. To Heretic (usunięcie odmów) na dostrojeniu Jackrong/DeepSeek-V4-Pro-Qwen3.5-9B: ok. 250 tys. próbek matematyki i STEM z DeepSeek-V4-Pro, SFT i lekkie RL (GSPO), bez danych z kodu ani agentów. Wyniki autora (oryginał, nie wersja po Heretic): GSM8K 94,5%, MMLU-Pro mat./fiz./chem. 90,53% vs 89,60% dla Qwen3.5-9B (+0,93 — w granicach błędu). Rozumuje długo: średnio 1627 tokenów na zadanie GSM8K (mediana 372, P90 3042). Do sprawdzenia: polski (karta mówi „6 języków”), wywoływanie narzędzi, opóźnienie, wersja GGUF (karta pokazuje 10 kwantyzacji) |
 
 Platforma: mini PC z AMD Ryzen AI (Vulkan, profil `performance`). Jeśli to możliwe, porównać Ryzen AI 7 350 z HX 370/470 oraz 16 GB z 32 GB.
 
