@@ -45,3 +45,57 @@ jobs:
           languages: python
           queries: security-extended
       - uses: github/codeql-action/analyze@v4
+
+  trivy:
+    name: Trivy (zależności, konfiguracja, sekrety)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: trivy fs
+        run: |
+          set +e
+          docker run --rm -v "$PWD:/src:ro" ghcr.io/aquasecurity/trivy:0.58.1 fs /src \
+            --scanners vuln,misconfig,secret --severity HIGH,CRITICAL --ignore-unfixed \
+            --skip-dirs /src/server/tests --skip-dirs /src/.git \
+            --format table --exit-code 1 > trivy.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then grep -E "HIGH|CRITICAL|Total" trivy.txt | head -n 40 | while IFS= read -r line; do echo "::error title=trivy::$line"; done; fi
+          exit $status
+
+  zap:
+    name: OWASP ZAP (skan dynamiczny API)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install --require-hashes -r server/requirements.lock && pip install --no-deps -e server
+      - name: Uruchom serwer (bez Ollamy, na pustych danych)
+        run: |
+          mkdir -p "$RUNNER_TEMP/edge"
+          cd server
+          EDGE_TOKENS_FILE="$RUNNER_TEMP/edge/tokens.json" EDGE_DB_FILE="$RUNNER_TEMP/edge/edge.db" \
+          EDGE_FILES_DIR="$RUNNER_TEMP/edge/files" EDGE_PAIRING_FILE="$RUNNER_TEMP/edge/pairing.json" \
+          nohup uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8080 --no-server-header > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:8080/health >/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/server.log"; exit 1
+      - name: ZAP baseline (pasywny, bez ataków aktywnych)
+        run: |
+          mkdir -p zap && chmod 777 zap
+          set +e
+          docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://127.0.0.1:8080 -I -J zap.json -r zap.html
+          status=$?
+          echo "kod wyjścia ZAP: $status"
+          if [ $status -eq 1 ]; then exit 1; fi
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-raport
+          path: zap/
