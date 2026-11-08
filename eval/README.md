@@ -11,6 +11,7 @@ Cel: na tych samych 100 pytaniach (50 PL, 50 EN) porównać modele i urządzenia
 | Gemma 4 26B-A4B (HauhauCS, główny przy 24+ GB) | `hf.co/HauhauCS/Gemma4-26B-A4B-QAT-Uncensored-HauhauCS-Balanced-MTP:Q4_K_M` |
 | Ornith-1.5-35B-A3B (kod, przy 24+ GB) | `hf.co/ressl/Ornith-1.5-35B-A3B-uncensored-GGUF:Q4_K_M` |
 | Gemma 4 E4B (16 GB) | do ustalenia tag w Ollamie |
+| DeepSeek-V4-Pro-Qwen3.5-9B-UNCENSORED-heretic (xtools-at, 16 GB, tryb rozumowania) | Apache-2.0 wg karty; widoczny tylko format safetensors (GGUF do sprawdzenia); dostrojony na odpowiedziach DeepSeek, nastawiony na matematykę/STEM; „6 języków” — sprawdzić, czy jest polski; model „myślący” = więcej tokenów = wolniej |
 
 Platforma: mini PC z AMD Ryzen AI (Vulkan, profil `performance`). Jeśli to możliwe, porównać Ryzen AI 7 350 z HX 370/470 oraz 16 GB z 32 GB.
 
