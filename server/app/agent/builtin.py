@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from ..files import FileStore
 from ..storage import Storage
 from . import files_tools
+from .sandbox import RUN_PYTHON, build_run_python
 from .policy import Risk, ToolSpec
 from .runner import Executor
 from .tools import calculator, current_time
@@ -21,10 +23,10 @@ FILE_SPECS = [
     files_tools.LIST_FILES, files_tools.READ_FILE, files_tools.FIND_DUPLICATES, files_tools.STALE_FILES,
     files_tools.MERGE_CSV, files_tools.EXTRACT_ZIP, files_tools.PDF_PAGES, files_tools.DELETE_FILES,
 ]
-SPECS = [CALCULATOR, CURRENT_TIME, LIST_NOTES, SEARCH_NOTES, SAVE_NOTE, *FILE_SPECS]
+SPECS = [CALCULATOR, CURRENT_TIME, LIST_NOTES, SEARCH_NOTES, SAVE_NOTE, *FILE_SPECS, RUN_PYTHON]
 
 
-def build_registry(storage: Storage, files: FileStore | None = None) -> dict[str, tuple[ToolSpec, dict[str, Any], Executor]]:
+def build_registry(storage: Storage, files: FileStore | None = None, sandbox_dir: Path | None = None, sandbox_runner: Any = None) -> dict[str, tuple[ToolSpec, dict[str, Any], Executor]]:
     def calc(args: dict[str, Any], _device: str) -> str:
         return str(calculator(str(args.get("expression", ""))))
 
@@ -76,4 +78,7 @@ def build_registry(storage: Storage, files: FileStore | None = None) -> dict[str
     }
     if files is not None:
         registry.update(files_tools.build_file_tools(files))
+    if sandbox_dir is not None:
+        spec, schema, fn = build_run_python(sandbox_dir, *( [sandbox_runner] if sandbox_runner else []))
+        registry[spec.name] = (spec, schema, fn)
     return registry

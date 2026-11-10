@@ -19,7 +19,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [x] `edge-llm doctor` (`sudo edge-llm-doctor`): usługi, porty, zapora, SSH, uprawnienia, blokada Ollamy, LUKS, TPM, Secure Boot, poprawki
 - [x] Doctor: skan plików konfiguracji pod ukryte znaki i polecenia pobierz-i-uruchom (pomysł z ECC); `sudo edge-llm-doctor --deep` uruchamia ssh-audit i Lynis
 - [x] Trivy (zależności, konfiguracja, sekrety) i ZAP baseline (skan pasywny API) w CI, tygodniowo i przy każdym pushu
-- [ ] Piaskownica podman/gVisor (lub OpenSandbox) przed włączeniem uruchamiania kodu
+- [x] Piaskownica podman + gVisor dla `run_python`: wykonawca (świeży pusty katalog, limity, obcięty wynik), `sudo device/sandbox-setup.sh` z testem szczelności, wyłączona domyślnie (`EDGE_EXECUTE_ENABLED`), zawsze za zgodą; do sprawdzenia na sprzęcie
 - [ ] Dziennik wykonanych narzędzi i zapytań sieciowych
 
 ## 2. Funkcje

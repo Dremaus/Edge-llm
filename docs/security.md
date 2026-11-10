@@ -32,7 +32,7 @@ urządzenia, a nic nie jest dostępne z internetu bez uwierzytelnionego, szyfrow
 | Wyciek sekretu do repozytorium | gitleaks w CI, `.gitignore` dla `.env` i plików tokenów | ✅ |
 | Podmieniony model z Hugging Face | Katalog zatwierdzonych modeli; przypięcie wersji i sum SHA-256 | ⏳ przed wydaniem |
 | Prompt injection (dokumenty, strony WWW, narzędzia) | Polityka narzędzi (`app/agent/policy.py`): poziomy ryzyka, domyślna odmowa, sieć i uruchamianie kodu wyłączone domyślnie, potwierdzenie przed zapisem i akcjami nieodwracalnymi, budżet wywołań; treść z zewnątrz w losowo oznaczonych blokach UNTRUSTED, których nie da się zamknąć od środka | ✅ (endpoint `/v1/agent`, potwierdzenia w aplikacji) |
-| Złośliwy kod uruchamiany przez agenta | Podman bez roota + gVisor: bez sieci, system plików tylko do odczytu, bez uprawnień, limity pamięci/CPU/procesów/czasu (`sandbox_command`) | ✅ definicja / ⏳ wdrożenie |
+| Złośliwy kod uruchamiany przez agenta | Podman bez roota + gVisor: bez sieci, system plików tylko do odczytu, bez uprawnień, limity pamięci/CPU/procesów/czasu (`sandbox_command`) | ✅ wykonawca i skrypt `device/sandbox-setup.sh` gotowe, ⏳ test na sprzęcie (rootless podman wewnątrz utwardzonej usługi systemd do sprawdzenia) |
 | Kradzież fizyczna urządzenia | Szyfrowanie dysku (LUKS) z kluczem w fTPM/Pluton związanym z Secure Boot (PCR 7), hasło BIOS, blokada startu z USB — instrukcja w docs/hardware.md | 📄 instrukcja / ⏳ automatyzacja |
 | Podmieniona aktualizacja | Aktualizacje podpisane kluczem producenta, weryfikowane przed instalacją; możliwość wycofania | ⏳ |
 | Kradzież telefonu | Token w Keystore/Keychain, blokada biometryczna aplikacji, zdalne unieważnienie tokenu | ✅ |

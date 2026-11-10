@@ -20,6 +20,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from .agent import sandbox
 from .agent.builtin import SPECS, build_registry
 from .agent.policy import PolicyConfig, ToolPolicy
 from .agent.runner import AgentRunner
@@ -66,8 +67,14 @@ def create_app(
     router = ModelRouter(settings, llm)
     file_store = FileStore(settings.files_dir)
     stt = stt or (WhisperClient(settings.whisper_url) if settings.stt_enabled else None)
-    # Agent: tylko narzędzia lokalne; sieć i uruchamianie kodu wyłączone (brak wykonawców).
-    agent = AgentRunner(llm, ToolPolicy(SPECS, PolicyConfig()), build_registry(store, file_store))  # type: ignore[arg-type]
+    # Agent: narzędzia lokalne; sieć wyłączona. Kod uruchamia się tylko przy EDGE_EXECUTE_ENABLED=1
+    # i zainstalowanej piaskownicy (podman + gVisor); bez niej narzędzie w ogóle nie jest rejestrowane.
+    run_code = settings.execute_enabled and sandbox.available()
+    agent = AgentRunner(
+        llm,
+        ToolPolicy(SPECS, PolicyConfig(execute_enabled=run_code)),
+        build_registry(store, file_store, Path(settings.sandbox_dir) if run_code else None),
+    )  # type: ignore[arg-type]
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
     # Za `tailscale serve` adres klienta pochodzi z X-Forwarded-For; bez niego wszyscy mają 127.0.0.1.
     # Dlatego dwie osobne blokady: ostra dla parowania (kod 50-bitowy) i łagodniejsza dla tokenów

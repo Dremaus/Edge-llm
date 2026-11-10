@@ -257,6 +257,21 @@ def check_deep(sh: Runner) -> list[Result]:
     return out
 
 
+def check_sandbox(env_file: Path) -> list[Result]:
+    """Jeśli uruchamianie kodu jest włączone, piaskownica (podman + runsc) musi być na miejscu."""
+    try:
+        enabled = "EDGE_EXECUTE_ENABLED=1" in env_file.read_text().splitlines()
+    except OSError:
+        enabled = False
+    have = {t: shutil.which(t) is not None for t in ("podman", "runsc")}
+    if not enabled:
+        return [Result(PASS, "uruchamianie kodu", "wyłączone")]
+    if all(have.values()):
+        return [Result(PASS, "uruchamianie kodu", "włączone, piaskownica podman + gVisor jest zainstalowana")]
+    missing = ", ".join(t for t, ok in have.items() if not ok)
+    return [Result(WARN, "uruchamianie kodu", f"włączone, ale brak: {missing} (narzędzie run_python nie jest rejestrowane)", "sudo device/sandbox-setup.sh")]
+
+
 def collect(sh: Runner = run, env_file: Path = Path("/etc/edge-llm.env"), state_dir: Path = Path("/var/lib/edge-llm"),
             dropin: Path = Path("/etc/systemd/system/ollama.service.d/egress.conf"), deep: bool = False,
             config_paths: list[Path] | None = None) -> list[Result]:
@@ -264,7 +279,7 @@ def collect(sh: Runner = run, env_file: Path = Path("/etc/edge-llm.env"), state_
     for part in (
         check_services(sh), check_ports(sh), check_firewall(sh), check_ssh(sh), check_files(env_file, state_dir),
         check_ollama_egress(dropin), check_disk_encryption(sh), check_boot_security(sh), check_updates(sh),
-        check_models(sh), check_extra_tools(), check_config_scan(config_paths or DEFAULT_SCAN_PATHS),
+        check_models(sh), check_extra_tools(), check_sandbox(env_file), check_config_scan(config_paths or DEFAULT_SCAN_PATHS),
         check_deep(sh) if deep else [],
     ):
         results.extend(part)

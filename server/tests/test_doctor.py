@@ -108,3 +108,13 @@ def test_deep_with_tools(monkeypatch):
         return (0, "(kex) x [fail] bad\n") if cmd[0] == "ssh-audit" else (0, "Hardening index : 82 [####]")
     res = d.check_deep(sh)
     assert res[0].status == "FAIL" and res[1].status == "PASS"
+
+
+def test_sandbox_check(tmp_path, monkeypatch):
+    env = tmp_path / "e.env"
+    assert doctor.check_sandbox(env)[0].status == PASS  # brak pliku = wyłączone
+    env.write_text("EDGE_EXECUTE_ENABLED=1\n")
+    monkeypatch.setattr(doctor.shutil, "which", lambda n: None)
+    assert doctor.check_sandbox(env)[0].status == WARN
+    monkeypatch.setattr(doctor.shutil, "which", lambda n: "/x")
+    assert doctor.check_sandbox(env)[0].status == PASS
