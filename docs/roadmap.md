@@ -49,7 +49,10 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 
 ## 4. Dojrzałość projektu
 
-- [ ] Przypięcie wersji i sum kontrolnych modeli, codzienna synchronizacja przez PR
+- [ ] Przypięcie wersji i sum kontrolnych modeli, codzienna synchronizacja przez PR. Pliki modeli z zewnętrznych repozytoriów to granica zaufania: sprawdzać skrót sha256 (digest Ollamy zapisany w `models.yaml`), nie sam rozmiar, bo rozmiar wykrywa tylko ucięcie pobierania, a nie podmieniony plik tej samej długości; `edge-llm-doctor` porównuje digesty zainstalowanych modeli z katalogiem (pomysł z `SECURITY.md` kimi-k3-in-c)
+- [ ] Budżet pamięci przed pobraniem: narzędzie liczy rozmiar modelu + pamięć kontekstu (KV) + zapas systemu i ostrzega, czy model zmieści się w RAM razem z pozostałymi (dziś tylko ręczna uwaga w `models.yaml`, że Gemma i Ornith razem się nie mieszczą) (pomysł z `tools/budget.py` kimi-k3-in-c)
+- [ ] Zapis przebiegu użycia modeli (który model, kiedy, jak długo ładowany) i odtwarzanie go offline dla różnych `OLLAMA_KEEP_ALIVE` i `OLLAMA_MAX_LOADED_MODELS`, zamiast strojenia na ślepo; jeden zapis wystarcza do porównania wielu ustawień (pomysł z `tools/sim_cache.py`: trace + replay, LRU vs optimum). Zapis bez treści rozmów, tylko nazwy modeli i czasy
+- [ ] Testy wzorcowe po aktualizacji modelu: stały zestaw pytań z oczekiwanymi odpowiedziami w `eval/`, uruchamiany po każdej zmianie wersji modelu lub promptu, z progiem, poniżej którego synchronizacja PR się nie scala (pomysł z fixture'ów i `conform_all.py`)
 - [ ] Tryb dewelopera: sprawdzić Aidera, Continue, Cline i OpenCode na adresie zgodnym z OpenAI
 - [ ] Przegląd kodu lokalnym modelem (`alibaba/open-code-review`, Apache 2.0) — sprawdzić, czy przyjmie adres zgodny z OpenAI
 - [ ] Role agentów z ograniczonymi uprawnieniami i zasada „gotowe tylko z dowodem"
