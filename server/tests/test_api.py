@@ -349,3 +349,16 @@ def test_transcription_disabled_empty_and_upstream_error():
     bad, h3 = make_stt_client(FakeStt(fail=True))
     assert bad.post("/v1/audio/transcriptions", headers=h3, content=b"x").status_code == 502
     assert client.post("/v1/audio/transcriptions").status_code == 401
+
+
+def test_audit_endpoint_isolated_and_requires_auth():
+    storage = Storage()
+    tokens = TokenStore()
+    dev_a, t1 = tokens.create("a")
+    _, t2 = tokens.create("b")
+    client = TestClient(create_app(Settings(main_model="main"), FakeLLM(), tokens, PairingManager(tokens), storage))
+    storage.add_audit({"device_id": dev_a.id, "tool": "delete_files", "decision": "confirmed", "args": {"names": ["a.txt"]}, "ok": True})
+    assert client.get("/v1/audit").status_code in (401, 403)
+    rows = client.get("/v1/audit", headers={"Authorization": f"Bearer {t1}"}).json()["data"]
+    assert len(rows) == 1 and rows[0]["tool"] == "delete_files" and rows[0]["ok"] is True
+    assert client.get("/v1/audit", headers={"Authorization": f"Bearer {t2}"}).json()["data"] == []

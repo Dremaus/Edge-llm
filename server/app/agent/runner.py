@@ -83,7 +83,9 @@ class AgentRunner:
         llm: AgentLLM,
         policy: ToolPolicy,
         tools: dict[str, tuple[ToolSpec, dict[str, Any], Executor]],
+        audit: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
+        self._audit = audit
         self._llm = llm
         self._policy = policy
         self._tools = tools
@@ -113,14 +115,35 @@ class AgentRunner:
             del self._pending[action_id]
         msgs = pending.messages
         if approve:
-            result = await self._execute(pending.tool, pending.arguments, device_id)
+            result = await self._timed(pending.tool, pending.arguments, device_id, "confirmed")
             ToolPolicy.record_call(pending.tool, pending.budget)
             step = {"tool": pending.tool, "decision": "confirmed"}
         else:
+            self._log(device_id, pending.tool, "rejected", args=pending.arguments)
             result = "Użytkownik nie zgodził się na tę akcję. Nie ponawiaj jej."
             step = {"tool": pending.tool, "decision": "rejected"}
         msgs.append({"role": "tool", "tool_call_id": pending.call_id, "content": result})
         return await self._loop(device_id, pending.model, msgs, pending.budget, [step])
+
+    def _log(self, device_id: str, tool: str, decision: str, reason: str = "", args: Any = None,
+             result: str | None = None, ms: int | None = None) -> None:
+        """Dziennik audytu: kto, co, jaka decyzja, czy się udało. Błąd zapisu nie może zatrzymać agenta."""
+        if self._audit is None:
+            return
+        entry = {
+            "device_id": device_id, "tool": tool, "decision": decision, "reason": reason,
+            "args": args, "ok": None if result is None else not result.startswith("Błąd narzędzia:"), "ms": ms,
+        }
+        try:
+            self._audit(entry)
+        except Exception:  # noqa: BLE001
+            pass
+
+    async def _timed(self, name: str, args: dict[str, Any], device_id: str, decision: str) -> str:
+        start = time.monotonic()
+        result = await self._execute(name, args, device_id)
+        self._log(device_id, name, decision, args=args, result=result, ms=int((time.monotonic() - start) * 1000))
+        return result
 
     def _expire(self) -> None:
         now = time.time()
@@ -169,7 +192,7 @@ class AgentRunner:
                 steps.append({"tool": name, "decision": decision.value})
                 if decision == Decision.ALLOW:
                     ToolPolicy.record_call(name, budget)
-                    result = await self._execute(name, args or {}, device_id)
+                    result = await self._timed(name, args or {}, device_id, "allow")
                 elif decision == Decision.CONFIRM:
                     pending = PendingAction(
                         id=secrets.token_urlsafe(12),
@@ -188,11 +211,13 @@ class AgentRunner:
                             "tool_call_id": str(later.get("id") or ""),
                             "content": "Pominięto: czeka na zgodę użytkownika na wcześniejszą akcję.",
                         })
+                    self._log(device_id, name, "confirm_requested", reason, args)
                     with self._lock:
                         self._expire()
                         self._pending[pending.id] = pending
                     return AgentResult(pending=pending, steps=steps)
                 else:
+                    self._log(device_id, name, "deny", reason, args)
                     result = f"Odmowa: {reason}."
                 msgs.append({"role": "tool", "tool_call_id": call_id, "content": result})
         return AgentResult(content="Przerwano: zadanie wymagało zbyt wielu kroków.", steps=steps)

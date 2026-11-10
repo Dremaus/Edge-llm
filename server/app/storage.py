@@ -60,7 +60,22 @@ END;
 CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
     INSERT INTO notes_fts(notes_fts, rowid, text) VALUES ('delete', old.id, old.text);
 END;
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id TEXT NOT NULL,
+    ts REAL NOT NULL,
+    tool TEXT NOT NULL,
+    decision TEXT NOT NULL,
+    reason TEXT NOT NULL DEFAULT '',
+    args TEXT NOT NULL DEFAULT '',
+    ok INTEGER,
+    ms INTEGER
+);
+CREATE INDEX IF NOT EXISTS audit_device ON audit_log(device_id, id DESC);
 """
+
+AUDIT_KEEP_PER_DEVICE = 2000
+AUDIT_ARGS_CHARS = 200
 
 
 @dataclass
@@ -208,6 +223,35 @@ class Storage:
             cur = self._db.execute("DELETE FROM conversations WHERE device_id = ?", (device_id,))
             self._db.commit()
         return cur.rowcount
+
+    # --- dziennik audytu narzędzi (bez treści plików i wyników; argumenty maskowane i skrócone) -------
+    def add_audit(self, entry: dict[str, Any]) -> None:
+        args = entry.get("args")
+        text = ""
+        if args:
+            text = mask_secrets(json.dumps(args, ensure_ascii=False, default=str))[:AUDIT_ARGS_CHARS]
+        ok = entry.get("ok")
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO audit_log(device_id, ts, tool, decision, reason, args, ok, ms) VALUES (?,?,?,?,?,?,?,?)",
+                (entry["device_id"], time.time(), str(entry["tool"])[:64], str(entry["decision"]),
+                 str(entry.get("reason") or "")[:200], text, None if ok is None else int(bool(ok)), entry.get("ms")),
+            )
+            self._db.execute(
+                "DELETE FROM audit_log WHERE device_id = ? AND id NOT IN "
+                "(SELECT id FROM audit_log WHERE device_id = ? ORDER BY id DESC LIMIT ?)",
+                (entry["device_id"], entry["device_id"], AUDIT_KEEP_PER_DEVICE),
+            )
+            self._db.commit()
+
+    def list_audit(self, device_id: str, limit: int = 100) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT id, ts, tool, decision, reason, args, ok, ms FROM audit_log WHERE device_id = ? "
+                "ORDER BY id DESC LIMIT ?",
+                (device_id, max(1, min(limit, 500))),
+            ).fetchall()
+        return [{**dict(r), "ok": None if r["ok"] is None else bool(r["ok"])} for r in rows]
 
     # --- notatki (narzędzie agenta) ---------------------------------------
     def add_note(self, device_id: str, text: str) -> int:

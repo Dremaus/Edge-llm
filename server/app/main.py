@@ -74,6 +74,7 @@ def create_app(
         llm,
         ToolPolicy(SPECS, PolicyConfig(execute_enabled=run_code)),
         build_registry(store, file_store, Path(settings.sandbox_dir) if run_code else None),
+        audit=store.add_audit,
     )  # type: ignore[arg-type]
     limiter = TokenBucket(settings.rate_per_min, settings.rate_burst)
     # Za `tailscale serve` adres klienta pochodzi z X-Forwarded-For; bez niego wszyscy mają 127.0.0.1.
@@ -349,6 +350,11 @@ def create_app(
     @app.delete("/v1/conversations")
     async def delete_all_conversations(device: DeviceToken = Depends(require_device)):
         return {"deleted": store.delete_all(device.id)}
+
+    # --- dziennik audytu narzędzi: tylko odczyt, tylko własne wpisy telefonu ---------
+    @app.get("/v1/audit")
+    async def list_audit(limit: int = 100, device: DeviceToken = Depends(require_device)) -> dict[str, Any]:
+        return {"data": store.list_audit(device.id, limit)}
 
     # --- pamięć agenta (notatki): podgląd i usuwanie przez użytkownika -----
     @app.get("/v1/memory")
