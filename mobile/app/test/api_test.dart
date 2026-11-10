@@ -50,6 +50,19 @@ void main() {
     expect(seen.headers['Authorization'], 'Bearer tok');
   });
 
+  test('audit pobiera GET /v1/audit z limitem', () async {
+    late http.Request seen;
+    final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {
+      seen = req;
+      return http.Response.bytes(utf8.encode(jsonEncode({'data': [{'tool': 'calculator', 'decision': 'allow'}]})), 200);
+    }));
+    final rows = await api.audit(limit: 5);
+    expect(seen.method, 'GET');
+    expect(seen.url.path, '/v1/audit');
+    expect(seen.url.queryParameters['limit'], '5');
+    expect(rows.length, 1);
+  });
+
   test('deleteMemory wysyła DELETE /v1/memory/{id}', () async {
     late http.Request seen;
     final api = EdgeApi(Uri.parse('https://x'), 'tok', client: MockClient((req) async {

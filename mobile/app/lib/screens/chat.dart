@@ -10,6 +10,7 @@ import '../images.dart';
 import '../secure_store.dart';
 import '../strings.dart';
 import 'files.dart';
+import 'audit.dart';
 import 'memory.dart';
 import 'settings.dart';
 import 'status.dart';
@@ -278,6 +279,13 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.psychology_alt_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => MemoryScreen(api: widget.api, lang: widget.lang)),
+            ),
+          ),
+          IconButton(
+            tooltip: s.t('audit_title'),
+            icon: const Icon(Icons.history_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => AuditScreen(api: widget.api, lang: widget.lang)),
             ),
           ),
           IconButton(

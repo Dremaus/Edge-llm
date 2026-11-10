@@ -20,7 +20,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [x] Doctor: skan plików konfiguracji pod ukryte znaki i polecenia pobierz-i-uruchom (pomysł z ECC); `sudo edge-llm-doctor --deep` uruchamia ssh-audit i Lynis
 - [x] Trivy (zależności, konfiguracja, sekrety) i ZAP baseline (skan pasywny API) w CI, tygodniowo i przy każdym pushu
 - [x] Piaskownica podman + gVisor dla `run_python`: wykonawca (świeży pusty katalog, limity, obcięty wynik), `sudo device/sandbox-setup.sh` z testem szczelności, wyłączona domyślnie (`EDGE_EXECUTE_ENABLED`), zawsze za zgodą; do sprawdzenia na sprzęcie
-- [x] Dziennik audytu wykonanych narzędzi (`/v1/audit`, SQLite, argumenty maskowane); do zrobienia: ekran w aplikacji, wpisy o zapytaniach sieciowych (dziś żadne narzędzie nie ma dostępu do sieci, więc dziennik narzędzi je obejmie z chwilą dodania takiego narzędzia)
+- [x] Dziennik audytu wykonanych narzędzi (`/v1/audit`, SQLite, argumenty maskowane); do zrobienia: ekran „Dziennik działań” w aplikacji jest (ikona historii na czacie); do zrobienia: wpisy o zapytaniach sieciowych (dziś żadne narzędzie nie ma dostępu do sieci, więc dziennik narzędzi je obejmie z chwilą dodania takiego narzędzia)
 
 ## 2. Funkcje
 

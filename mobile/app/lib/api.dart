@@ -111,6 +111,9 @@ class EdgeApi {
   /// Pamięć agenta (notatki) — użytkownik może ją przejrzeć i usunąć wpis.
   Future<List<dynamic>> memory() async => (await _json('GET', '/v1/memory'))['data'] as List<dynamic>;
 
+  Future<List<dynamic>> audit({int limit = 100}) async =>
+      (await _json('GET', '/v1/audit?limit=$limit'))['data'] as List<dynamic>;
+
   Future<void> deleteMemory(int id) => _json('DELETE', '/v1/memory/$id');
 
   /// Pliki użytkownika dla narzędzi agenta (PDF, arkusze, tekst).
