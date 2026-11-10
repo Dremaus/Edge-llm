@@ -17,7 +17,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 
 - [x] Zablokować ruch wychodzący Ollamy po pobraniu modeli (badanie Cohere: model próbował wysłać dane do chmury); aktualizacja przez `device/pull-models.sh`
 - [x] `edge-llm doctor` (`sudo edge-llm-doctor`): usługi, porty, zapora, SSH, uprawnienia, blokada Ollamy, LUKS, TPM, Secure Boot, poprawki
-- [ ] Doctor: uruchamianie Lynis i ssh-audit oraz skan plików konfiguracji pod ukryte polecenia (pomysł z ECC)
+- [x] Doctor: skan plików konfiguracji pod ukryte znaki i polecenia pobierz-i-uruchom (pomysł z ECC); `sudo edge-llm-doctor --deep` uruchamia ssh-audit i Lynis
 - [x] Trivy (zależności, konfiguracja, sekrety) i ZAP baseline (skan pasywny API) w CI, tygodniowo i przy każdym pushu
 - [ ] Piaskownica podman/gVisor (lub OpenSandbox) przed włączeniem uruchamiania kodu
 - [ ] Dziennik wykonanych narzędzi i zapytań sieciowych

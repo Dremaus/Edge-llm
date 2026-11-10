@@ -1,7 +1,7 @@
 """edge-llm doctor: szybki przegląd bezpieczeństwa i stanu urządzenia.
 
 Uruchom: `sudo edge-llm-doctor` (po instalacji) albo `python -m app.doctor`.
-Tylko odczyt — niczego nie zmienia. Kod wyjścia: 0 = bez błędów, 1 = są FAIL, 2 = tylko ostrzeżenia.
+Tylko odczyt — niczego nie zmienia. `--deep` dodatkowo uruchamia ssh-audit i Lynis (jeśli są zainstalowane). Kod wyjścia: 0 = bez błędów, 1 = są FAIL, 2 = tylko ostrzeżenia.
 Sprawdza to, co da się ustalić z systemu; ustawień BIOS (hasło, Secure Boot w firmware) nie widzi.
 """
 
@@ -21,6 +21,8 @@ SERVICES = ["edge-llm", "ollama"]
 OPTIONAL_SERVICES = ["tailscaled", "whisper", "fail2ban"]
 # Porty, które mogą słuchać poza localhost (SSH). Reszta tylko na 127.0.0.1 / ::1.
 PUBLIC_PORTS_ALLOWED = {22}
+
+DEFAULT_SCAN_PATHS = [Path("/etc/edge-llm.env"), Path("/etc/systemd/system"), Path("/opt/edge-llm/app")]
 
 Runner = Callable[[list[str]], tuple[int, str]]
 
@@ -193,13 +195,77 @@ def check_extra_tools() -> list[Result]:
     return [Result(WARN, "narzędzia audytu", f"brak: {', '.join(missing)}", f"sudo apt install {' '.join(missing)}")]
 
 
+# Ukryte znaki sterujące (kierunek tekstu, zerowa szerokość) i polecenia pobierz-i-uruchom w plikach konfiguracji.
+_HIDDEN_CHARS = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]")
+_SUSPICIOUS = re.compile(
+    r"(curl|wget)[^\n|]*\|\s*(sudo\s+)?(ba|z)?sh\b|base64\s+(-d|--decode)[^\n]*\|\s*(ba)?sh\b|\bnc\s+(-\w*e\w*)\s|/dev/tcp/"
+)
+SCAN_SUFFIXES = {".service", ".conf", ".env", ".sh", ".yaml", ".yml", ".toml", ".json", ".md"}
+
+
+def scan_config(paths: list[Path], max_files: int = 2000) -> list[str]:
+    """Zwraca opisy znalezisk: ukryte znaki lub podejrzane polecenia. Tylko odczyt."""
+    findings: list[str] = []
+    seen = 0
+    for root in paths:
+        files = [root] if root.is_file() else sorted(root.rglob("*")) if root.is_dir() else []
+        for f in files:
+            if seen >= max_files:
+                return findings
+            if f.is_symlink() or not f.is_file() or f.suffix not in SCAN_SUFFIXES and f.name != "edge-llm.env":
+                continue
+            seen += 1
+            try:
+                text = f.read_text(encoding="utf-8", errors="ignore") if f.stat().st_size <= 1_000_000 else ""
+            except OSError:
+                continue
+            if _HIDDEN_CHARS.search(text):
+                findings.append(f"{f}: ukryte znaki sterujące")
+            if _SUSPICIOUS.search(text):
+                findings.append(f"{f}: polecenie pobierz-i-uruchom lub powłoka zwrotna")
+    return findings
+
+
+def check_config_scan(paths: list[Path]) -> list[Result]:
+    found = scan_config(paths)
+    if not found:
+        return [Result(PASS, "skan plików konfiguracji", "bez ukrytych znaków i podejrzanych poleceń")]
+    return [Result(FAIL, "skan plików konfiguracji", "; ".join(found[:5]), "sprawdź wskazane pliki ręcznie")]
+
+
+def check_deep(sh: Runner) -> list[Result]:
+    """Tryb --deep: ssh-audit na localhost:22 i krótki audyt Lynis (jeśli zainstalowane)."""
+    out: list[Result] = []
+    if shutil.which("ssh-audit"):
+        code, text = sh(["ssh-audit", "-n", "127.0.0.1"])
+        bad = [ln.strip() for ln in text.splitlines() if "[fail]" in ln]
+        out.append(Result(FAIL if bad else PASS, "ssh-audit", "; ".join(bad[:3]) if bad else "brak błędów",
+                          "wyłącz wskazane algorytmy w /etc/ssh/sshd_config.d/" if bad else ""))
+    else:
+        out.append(Result(WARN, "ssh-audit", "niezainstalowany", "sudo apt install ssh-audit"))
+    if shutil.which("lynis"):
+        code, text = sh(["lynis", "audit", "system", "--quick", "--no-colors", "--quiet"])
+        m = re.search(r"Hardening index\s*:\s*(\d+)", text)
+        idx = int(m.group(1)) if m else None
+        if idx is None:
+            out.append(Result(WARN, "lynis", "nie udało się odczytać wyniku"))
+        else:
+            out.append(Result(PASS if idx >= 70 else WARN, "lynis", f"indeks utwardzenia {idx}/100",
+                              "" if idx >= 70 else "sudo lynis show details, popraw sugestie"))
+    else:
+        out.append(Result(WARN, "lynis", "niezainstalowany", "sudo apt install lynis"))
+    return out
+
+
 def collect(sh: Runner = run, env_file: Path = Path("/etc/edge-llm.env"), state_dir: Path = Path("/var/lib/edge-llm"),
-            dropin: Path = Path("/etc/systemd/system/ollama.service.d/egress.conf")) -> list[Result]:
+            dropin: Path = Path("/etc/systemd/system/ollama.service.d/egress.conf"), deep: bool = False,
+            config_paths: list[Path] | None = None) -> list[Result]:
     results: list[Result] = []
     for part in (
         check_services(sh), check_ports(sh), check_firewall(sh), check_ssh(sh), check_files(env_file, state_dir),
         check_ollama_egress(dropin), check_disk_encryption(sh), check_boot_security(sh), check_updates(sh),
-        check_models(sh), check_extra_tools(),
+        check_models(sh), check_extra_tools(), check_config_scan(config_paths or DEFAULT_SCAN_PATHS),
+        check_deep(sh) if deep else [],
     ):
         results.extend(part)
     return results
@@ -229,7 +295,7 @@ def exit_code(results: list[Result]) -> int:
 def main() -> int:
     if os.geteuid() != 0:
         print("Uwaga: bez uprawnień roota część testów (zapora, sshd) może się nie udać.", file=sys.stderr)
-    results = collect()
+    results = collect(deep="--deep" in sys.argv[1:])
     print(render(results))
     return exit_code(results)
 

