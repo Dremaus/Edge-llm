@@ -365,12 +365,12 @@ def test_audit_endpoint_isolated_and_requires_auth():
 
 
 def test_thinking_setting_reaches_model_params():
-    client, llm, h, _ = make_client(main_model="qwen3.5:4b")
+    client, llm, h, _ = make_client(thinking_models=("main",))
     assert client.get("/v1/settings", headers=h).json()["thinking"] == "off"
     assert client.patch("/v1/settings", headers=h, json={"thinking": "short"}).json()["thinking"] == "short"
     assert client.patch("/v1/settings", headers=h, json={"thinking": "x"}).status_code == 400
     llm.seen.clear()
-    r = client.post("/v1/chat/completions", headers=h, json={"messages": [{"role": "user", "content": "Cześć"}], "model": "qwen3.5:4b"})
+    r = client.post("/v1/chat/completions", headers=h, json={"messages": [{"role": "user", "content": "Cześć"}], "model": "main"})
     assert r.status_code == 200
     params = llm.seen[-1][2]
     assert params["reasoning_effort"] == "low" and params["max_tokens"] == 1500
