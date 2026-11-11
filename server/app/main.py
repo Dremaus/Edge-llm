@@ -26,6 +26,7 @@ from .agent.policy import PolicyConfig, ToolPolicy
 from .agent.runner import AgentRunner
 from .files import FileError, FileStore
 from .config import SYSTEM_PROMPTS, Settings, get_settings
+from .thinking import apply_thinking
 from .llm import LLMClient, OllamaClient
 from .router import ModelRouter
 from .stt import MAX_AUDIO_BYTES, SttError, Transcriber, WhisperClient
@@ -201,6 +202,7 @@ def create_app(
         if conv_id is None and body.get("save") is True:
             conv_id = store.create_conversation(device.id, _title(messages))
 
+        params = apply_thinking(user_settings.thinking, model, settings.thinking_models, params)
         log.info("chat device=%s model=%s route=%s", device.id, model, route_info.get("route"))
         headers = {**SECURITY_HEADERS, "X-Edge-Model": model}
         if route_info:

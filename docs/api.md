@@ -64,7 +64,7 @@ PATCH /v1/settings
 {"language": "pl", "chat_model": "bielik", "onboarding_done": true}
 ```
 
-`language`: `pl` | `en`. `chat_model`: `qwen` | `bielik` (Bielik obsługuje rozmowy; zdjęcia zawsze trafiają do Qwen).
+`thinking`: `off` (domyślnie) | `short` | `full` — rozumowanie modeli, które je obsługują (lista w `EDGE_THINKING_MODELS`, domyślnie prefiks `qwen3`); `short` ustawia niski wysiłek i limit 1500 tokenów odpowiedzi. `language`: `pl` | `en`. `chat_model`: `qwen` | `bielik` (Bielik obsługuje rozmowy; zdjęcia zawsze trafiają do Qwen).
 
 ## Kody błędów
 

@@ -83,12 +83,14 @@ class DeviceSettings:
     language: str = "pl"
     chat_model: str = "qwen"
     onboarding_done: bool = False
+    thinking: str = "off"
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "language": self.language,
             "chat_model": self.chat_model,
             "onboarding_done": self.onboarding_done,
+            "thinking": self.thinking,
         }
 
 
@@ -123,10 +125,11 @@ class Storage:
             language=rows.get("language", self._default_language),
             chat_model=rows.get("chat_model", "qwen"),
             onboarding_done=rows.get("onboarding_done") == "1",
+            thinking=rows.get("thinking", "off") if rows.get("thinking") in ("off", "short", "full") else "off",
         )
 
     def update_settings(self, changes: dict[str, Any]) -> DeviceSettings:
-        allowed = {"language", "chat_model", "onboarding_done"}
+        allowed = {"language", "chat_model", "onboarding_done", "thinking"}
         unknown = set(changes) - allowed
         if unknown:
             raise SettingsError("Nieznane ustawienie")
@@ -139,6 +142,10 @@ class Storage:
             if changes["chat_model"] not in CHAT_MODELS:
                 raise SettingsError("Model musi być 'qwen' lub 'bielik'")
             values["chat_model"] = changes["chat_model"]
+        if "thinking" in changes:
+            if changes["thinking"] not in ("off", "short", "full"):
+                raise SettingsError("Rozumowanie musi być 'off', 'short' lub 'full'")
+            values["thinking"] = changes["thinking"]
         if "onboarding_done" in changes:
             if not isinstance(changes["onboarding_done"], bool):
                 raise SettingsError("onboarding_done musi być wartością logiczną")

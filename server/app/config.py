@@ -51,6 +51,10 @@ class Settings:
     )
     rate_per_min: float = field(default_factory=lambda: float(_env("EDGE_RATE_PER_MIN", "30")))
     rate_burst: int = field(default_factory=lambda: int(_env("EDGE_RATE_BURST", "10")))
+    # Modele, którym wolno wysłać parametr rozumowania (prefiksy nazw, po przecinku).
+    thinking_models: tuple[str, ...] = field(
+        default_factory=lambda: tuple(x.strip() for x in _env("EDGE_THINKING_MODELS", "qwen3").split(",") if x.strip())
+    )
     # Uruchamianie kodu przez agenta: tylko z podmanem + gVisor (device/sandbox-setup.sh); zawsze za zgodą w aplikacji.
     execute_enabled: bool = field(default_factory=lambda: _env("EDGE_EXECUTE_ENABLED", "0") == "1")
     sandbox_dir: str = field(default_factory=lambda: _env("EDGE_SANDBOX_DIR", "/var/lib/edge-llm/sandbox"))

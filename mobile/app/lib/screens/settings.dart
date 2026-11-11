@@ -112,6 +112,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onSelectionChanged: (v) => _update({'chat_model': v.first}),
                   ),
                 ),
+                ListTile(
+                  title: Text(s.t('thinking')),
+                  subtitle: Text(s.t('thinking_hint')),
+                  trailing: SegmentedButton<String>(
+                    segments: [
+                      ButtonSegment(value: 'off', label: Text(s.t('thinking_off'))),
+                      ButtonSegment(value: 'short', label: Text(s.t('thinking_short'))),
+                      ButtonSegment(value: 'full', label: Text(s.t('thinking_full'))),
+                    ],
+                    selected: {(st['thinking'] as String?) ?? 'off'},
+                    onSelectionChanged: (v) => _update({'thinking': v.first}),
+                  ),
+                ),
                 SwitchListTile(
                   title: Text(s.t('app_lock')),
                   value: _lock,

@@ -34,7 +34,7 @@ są w `docs/decisions.md`. Kolejność w sekcjach to proponowany priorytet.
 - [ ] Generowanie aplikacji krok po kroku z testem po każdym kroku
 - [ ] Kontrola wygenerowanych stron w przeglądarce bez okna: kontrast, fokus, układ na telefonie (pomysł z `hallmark`)
 - [ ] Styl odpowiedzi w ustawieniach: normalny / krótki / prosty (pomysły z `i-have-adhd` i `caveman`). Krótki styl skraca też czas generowania na wolnym sprzęcie; sprawdzić utratę jakości oceną sędziego
-- [ ] Przełącznik rozumowania w ustawieniach z limitem tokenów myślenia (modele rozumujące generują setki–tysiące tokenów przed odpowiedzią, co przy ok. 10–20 tok/s oznacza minuty)
+- [x] Przełącznik rozumowania (wył. / krótkie / pełne) w ustawieniach i `/v1/settings`, domyślnie wyłączone; parametr `reasoning_effort` dostają tylko modele z `EDGE_THINKING_MODELS`. Do sprawdzenia na sprzęcie: czy Ollama przyjmuje `reasoning_effort` dla naszych modeli i jak naprawdę skraca myślenie; tryb narzędzi (agent) jeszcze go nie stosuje
 - [ ] Wyszukiwanie w historii rozmów (FTS5), jak w `hermes-agent`
 - [ ] Zadania cykliczne w języku naturalnym (np. dzienny raport) z zatwierdzeniem harmonogramu przez użytkownika; powiadomienia na telefon (pomysł z `hermes-agent`)
 - [ ] Strojenie promptów routera i reguł agenta na zbiorze `eval/` z bramką walidacji; wynik jako PR do przeglądu, nigdy samoistna zmiana (pomysł z Microsoft SkillOpt i Google Harness²: propozycje zmian testowane na tym samym zadaniu; wymaga silnego modelu-edytora, więc tylko poza urządzeniem)
