@@ -66,3 +66,13 @@ models:
     source: huggingface
     license: MIT
     notes: Kod przy 16 GB.
+
+  # Dodatkowy model (decyzja 24.11.2026): matematyka i STEM, włączany w ustawieniach jak Bielik.
+  # Dane z karty modelu (autor: xtools-at; baza Jackrong/DeepSeek-V4-Pro-Qwen3.5-9B na Qwen3.5-9B).
+  - id: xtools-at/DeepSeek-V4-Pro-Qwen3.5-9B-UNCENSORED-heretic
+    role: alt
+    status: candidate
+    min_ram_gb: 16
+    source: huggingface (repozytorium zawiera tylko safetensors BF16 — potrzebny GGUF)
+    license: Apache-2.0 (według karty modelu)
+    notes: Dodatkowy, nie główny. Destylat DeepSeek-V4-Pro do Qwen3.5-9B, trenowany na matematyce i STEM (bez danych z kodu), model rozumujący (średnio ok. 2,9 tys. tokenów na pytanie) — wolny na iGPU/CPU. Q4_K_M ok. 5,7 GB, Q8_0 ok. 9,5 GB. Wersja "uncensored" (heretic, 3/100 odmów) — ochrona wyłącznie po stronie serwera. Wyniki (GSM8K 94,5%, MMLU-Pro 90,5%) to deklaracje autora. Do zrobienia przed approved - wybrać repozytorium GGUF (nazwa do potwierdzenia, brak dostępu do HF w sesji), sprawdzić polski w eval/.
